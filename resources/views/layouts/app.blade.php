@@ -35,6 +35,13 @@
         .container {
             flex: 1;
         }
+        .vendedor-badge {
+            background: #ffc107;
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
     </style>
 </head>
 <body>
@@ -52,31 +59,70 @@
                         <a class="nav-link" href="{{ route('home') }}">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('productos.catalog') }}">Productos</a>
+                        <a class="nav-link" href="{{ route('productos.index') }}">Productos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('vendedores.index') }}">Vendedores</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">
-                    @if(session('usuario'))
+                    @auth
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('carrito.index') }}">
                                 <i class="fa fa-shopping-cart"></i> Carrito
+                                @if(auth()->user()->carrito->count() > 0)
+                                    <span class="badge bg-danger">{{ auth()->user()->carrito->count() }}</span>
+                                @endif
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('pedidos.historial') }}">Mis Pedidos</a>
+                            <a class="nav-link" href="{{ route('pedidos.index') }}">Mis Pedidos</a>
                         </li>
-                        @if(session('usuario.rol') === 'admin')
+                        
+                        @if(auth()->user()->esVendedor())
+                            @php
+                                $perfilVendedor = auth()->user()->perfilVendedor;
+                                $esVendedorActivo = $perfilVendedor && $perfilVendedor->activo_vendedor;
+                            @endphp
+                            
+                            @if($esVendedorActivo)
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{{ route('vendedor.dashboard') }}">
+                                        <span class="vendedor-badge">Mi Tienda</span>
+                                    </a>
+                                </li>
+                            @else
+                                <li class="nav-item">
+                                    <a class="nav-link text-warning" href="{{ route('vendedor.solicitud') }}">
+                                        <small>Vendedor Pendiente</small>
+                                    </a>
+                                </li>
+                            @endif
+                        @endif
+
+                        @if(auth()->user()->esAdmin())
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ route('admin.dashboard') }}">Admin</a>
                             </li>
                         @endif
-                        <li class="nav-item">
-                            <form method="POST" action="{{ route('logout') }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-link nav-link" style="border: none; background: none;">
-                                    Cerrar Sesión ({{ session('usuario.nombre') }})
-                                </button>
-                            </form>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                {{ auth()->user()->nombre }}
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('perfil.edit') }}">Mi Perfil</a></li>
+                                @if(!auth()->user()->esVendedor() && !auth()->user()->esAdmin())
+                                    <li><a class="dropdown-item" href="{{ route('vendedor.solicitud') }}">Ser Vendedor</a></li>
+                                @endif
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item">Cerrar Sesión</button>
+                                    </form>
+                                </li>
+                            </ul>
                         </li>
                     @else
                         <li class="nav-item">
@@ -85,7 +131,7 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('register') }}">Registrarse</a>
                         </li>
-                    @endif
+                    @endauth
                 </ul>
             </div>
         </div>

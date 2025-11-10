@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Usuario;
 
 class AuthController extends Controller
 {
@@ -14,27 +16,21 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // Simulación de login exitoso
-        $credentials = $request->only('email', 'password');
-        
-        // Para demo, aceptamos cualquier credencial
-        if (!empty($credentials['email']) && !empty($credentials['password'])) {
-            // En una aplicación real, usaríamos Auth::attempt()
-            session(['usuario' => [
-                'id' => 1,
-                'nombre' => 'Usuario Demo',
-                'email' => $credentials['email'],
-                'rol' => $credentials['email'] === 'admin@verdevida.com' ? 'admin' : 'cliente'
-            ]]);
-            
-            if ($credentials['email'] === 'admin@verdevida.com') {
-                return redirect()->route('admin.dashboard');
-            }
-            
-            return redirect()->route('home');
+        $credentials = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $usuario = Usuario::where('email', $credentials['email'])->first();
+
+        if ($usuario && Hash::check($credentials['password'], $usuario->password)) {
+            Auth::login($usuario);
+            return redirect()->intended('/')->with('success', 'Bienvenido ' . $usuario->nombre);
         }
-        
-        return back()->withErrors(['email' => 'Credenciales incorrectas']);
+
+        return back()->withErrors([
+            'email' => 'Las credenciales no coinciden con nuestros registros.',
+        ]);
     }
 
     public function showRegister()
@@ -44,28 +40,34 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        // Simulación de registro exitoso
-        $data = $request->validate([
-            'nombre' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:6',
-            'confirm_password' => 'required|same:password'
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'email' => 'required|email|unique:usuarios',
+            'password' => 'required|min:6|confirmed',
+            'telefono' => 'nullable|string|max:20',
+            'direccion' => 'nullable|string'
         ]);
 
-        // En una aplicación real, crearíamos el usuario en la base de datos
-        session(['usuario' => [
-            'id' => 2,
-            'nombre' => $data['nombre'],
-            'email' => $data['email'],
+        $usuario = Usuario::create([
+            'nombre' => $request->nombre,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'telefono' => $request->telefono,
+            'direccion' => $request->direccion,
             'rol' => 'cliente'
-        ]]);
+        ]);
 
-        return redirect()->route('home')->with('success', '¡Registro exitoso! Bienvenido a VerdeVida Market.');
+        Auth::login($usuario);
+
+        return redirect('/')->with('success', 'Cuenta creada exitosamente. ¡Bienvenido a VerdeVida Market!');
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
-        session()->forget('usuario');
-        return redirect()->route('home');
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect('/')->with('success', 'Sesión cerrada exitosamente.');
     }
 }
