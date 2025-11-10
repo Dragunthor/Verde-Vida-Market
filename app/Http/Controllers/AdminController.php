@@ -7,6 +7,9 @@ use App\Models\Usuario;
 use App\Models\Producto;
 use App\Models\VendedorPerfil;
 use App\Models\Pedido;
+use App\Models\Reporte;
+use App\Models\ResenaProducto;
+use App\Models\ResenaVendedor;
 
 class AdminController extends Controller
 {
@@ -19,26 +22,78 @@ class AdminController extends Controller
         return null; // Todo está bien
     }
 
+    public function __construct()
+    {
+        // Compartir datos con todas las vistas del admin
+        view()->composer('layouts.admin', function ($view) {
+            $vendedoresPendientesCount = VendedorPerfil::where('activo_vendedor', false)->count();
+            $productosPendientesCount = Producto::where('aprobado', false)->count();
+            $reportesPendientesCount = Reporte::where('estado', 'pendiente')->count();
+            $resenasPendientesCount = ResenaProducto::where('aprobado', false)->count() + 
+                                     ResenaVendedor::where('aprobado', false)->count();
+
+            $view->with([
+                'vendedoresPendientesCount' => $vendedoresPendientesCount,
+                'productosPendientesCount' => $productosPendientesCount,
+                'reportesPendientesCount' => $reportesPendientesCount,
+                'resenasPendientesCount' => $resenasPendientesCount,
+            ]);
+        });
+    }
+
     public function dashboard()
     {
-        $verificacion = $this->verificarAdmin();
-        if ($verificacion) return $verificacion;
+        // Verificar que el usuario es admin
+        if (!auth()->user()->esAdmin()) {
+            return redirect('/')->with('error', 'Acceso no autorizado.');
+        }
 
+        // Estadísticas principales
         $estadisticas = [
-            'total_usuarios' => Usuario::count(),
-            'total_vendedores' => Usuario::where('rol', 'vendedor')->count(),
-            'total_productos' => Producto::count(),
-            'productos_pendientes' => Producto::where('aprobado', false)->count(),
-            'vendedores_pendientes' => VendedorPerfil::where('activo_vendedor', false)->count(),
+            'ingresos_totales' => Pedido::where('estado', 'entregado')->sum('total'),
             'total_pedidos' => Pedido::count(),
+            'pedidos_pendientes' => Pedido::where('estado', 'pendiente')->count(),
+            'total_usuarios' => Usuario::count(),
+            'vendedores_pendientes' => VendedorPerfil::where('activo_vendedor', false)->count(),
+            'productos_pendientes' => Producto::where('aprobado', false)->count(),
+            'reportes_pendientes' => Reporte::where('estado', 'pendiente')->count(),
+            'resenas_pendientes' => ResenaProducto::where('aprobado', false)->count() + 
+                                   ResenaVendedor::where('aprobado', false)->count(),
         ];
 
-        $productosRecientes = Producto::with('vendedor', 'categoria')
+        // Datos para las secciones
+        $pedidosRecientes = Pedido::with('usuario')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
-        return view('admin.dashboard', compact('estadisticas', 'productosRecientes'));
+        $vendedoresPendientes = VendedorPerfil::with('usuario')
+            ->where('activo_vendedor', false)
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        $stockBajo = Producto::with('vendedor')
+            ->where('stock', '<', 10)
+            ->where('stock', '>', 0)
+            ->where('aprobado', true)
+            ->orderBy('stock', 'asc')
+            ->take(5)
+            ->get();
+
+        $reportesRecientes = Reporte::with('usuario')
+            ->where('estado', 'pendiente')
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        return view('admin.dashboard', compact(
+            'estadisticas',
+            'pedidosRecientes',
+            'vendedoresPendientes',
+            'stockBajo',
+            'reportesRecientes'
+        ));
     }
 
     public function vendedores()

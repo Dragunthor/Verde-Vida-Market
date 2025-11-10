@@ -3,100 +3,171 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\CarritoTemporal;
+use App\Models\Producto;
+use Illuminate\Support\Facades\Auth;
 
 class CarritoController extends Controller
 {
     public function index()
     {
-        $carrito = session('carrito', []);
-        $total = 0;
-        
-        foreach ($carrito as $item) {
-            $total += $item['precio'] * $item['cantidad'];
+        if (Auth::check()) {
+            // Usuario autenticado - carrito por usuario
+            $carrito = CarritoTemporal::with('producto.vendedor.perfilVendedor')
+                ->where('usuario_id', Auth::id())
+                ->get();
+        } else {
+            // Usuario no autenticado - carrito por sesión
+            $carrito = CarritoTemporal::with('producto.vendedor.perfilVendedor')
+                ->where('sesion_id', session()->getId())
+                ->get();
         }
 
-        return view('carrito.index', compact('carrito', 'total'));
+        return view('carrito.index', compact('carrito'));
     }
 
     public function agregar(Request $request)
     {
-        $productoId = $request->input('producto_id');
-        $cantidad = $request->input('cantidad', 1);
+        $request->validate([
+            'producto_id' => 'required|exists:productos,id',
+            'cantidad' => 'required|integer|min:1'
+        ]);
 
-        // Datos de ejemplo del producto
-        $producto = [
-            'id' => $productoId,
-            'nombre' => 'Producto ' . $productoId,
-            'precio' => 10.00 * $productoId,
-            'imagen' => 'placeholder.jpg',
-            'unidad' => 'Kg',
-            'stock' => 50
-        ];
+        $producto = Producto::findOrFail($request->producto_id);
 
-        $carrito = session('carrito', []);
-        
-        // Verificar si el producto ya está en el carrito
-        $encontrado = false;
-        foreach ($carrito as &$item) {
-            if ($item['id'] == $productoId) {
-                $item['cantidad'] += $cantidad;
-                $encontrado = true;
-                break;
+        // Verificar stock
+        if ($producto->stock < $request->cantidad) {
+            return back()->with('error', 'No hay suficiente stock disponible.');
+        }
+
+        // Verificar que el producto esté activo y aprobado
+        if (!$producto->activo || !$producto->aprobado) {
+            return back()->with('error', 'Este producto no está disponible actualmente.');
+        }
+
+        // Buscar si el producto ya está en el carrito
+        if (Auth::check()) {
+            $itemCarrito = CarritoTemporal::where('usuario_id', Auth::id())
+                ->where('producto_id', $request->producto_id)
+                ->first();
+        } else {
+            $itemCarrito = CarritoTemporal::where('sesion_id', session()->getId())
+                ->where('producto_id', $request->producto_id)
+                ->first();
+        }
+
+        if ($itemCarrito) {
+            // Actualizar cantidad si ya existe
+            $nuevaCantidad = $itemCarrito->cantidad + $request->cantidad;
+            
+            if ($nuevaCantidad > $producto->stock) {
+                return back()->with('error', 'No hay suficiente stock disponible.');
+            }
+
+            $itemCarrito->update(['cantidad' => $nuevaCantidad]);
+        } else {
+            // Crear nuevo item en el carrito
+            CarritoTemporal::create([
+                'sesion_id' => Auth::check() ? null : session()->getId(),
+                'usuario_id' => Auth::check() ? Auth::id() : null,
+                'producto_id' => $request->producto_id,
+                'cantidad' => $request->cantidad
+            ]);
+        }
+
+        return redirect()->route('carrito.index')->with('success', 'Producto agregado al carrito.');
+    }
+
+    public function actualizar(Request $request, $id)
+    {
+        $request->validate([
+            'cantidad' => 'required|integer|min:1'
+        ]);
+
+        $itemCarrito = CarritoTemporal::findOrFail($id);
+
+        // Verificar que el usuario tiene permiso para modificar este item
+        if (Auth::check()) {
+            if ($itemCarrito->usuario_id !== Auth::id()) {
+                return redirect()->route('carrito.index')->with('error', 'No tienes permiso para modificar este item.');
+            }
+        } else {
+            if ($itemCarrito->sesion_id !== session()->getId()) {
+                return redirect()->route('carrito.index')->with('error', 'No tienes permiso para modificar este item.');
             }
         }
 
-        if (!$encontrado) {
-            $carrito[] = [
-                'id' => $productoId,
-                'nombre' => $producto['nombre'],
-                'precio' => $producto['precio'],
-                'imagen' => $producto['imagen'],
-                'unidad' => $producto['unidad'],
-                'cantidad' => $cantidad,
-                'stock' => $producto['stock']
-            ];
+        // Verificar stock
+        if ($itemCarrito->producto->stock < $request->cantidad) {
+            return redirect()->route('carrito.index')->with('error', 'No hay suficiente stock disponible.');
         }
 
-        session(['carrito' => $carrito]);
+        $itemCarrito->update(['cantidad' => $request->cantidad]);
 
-        return redirect()->back()->with('success', 'Producto agregado al carrito.');
+        return redirect()->route('carrito.index')->with('success', 'Carrito actualizado.');
     }
 
-    public function actualizar(Request $request)
+    public function actualizarTodo(Request $request)
     {
-        $cantidades = $request->input('cantidades', []);
-        $carrito = session('carrito', []);
+        $request->validate([
+            'cantidades' => 'required|array',
+            'cantidades.*' => 'integer|min:0'
+        ]);
 
-        foreach ($cantidades as $id => $cantidad) {
-            foreach ($carrito as &$item) {
-                if ($item['id'] == $id) {
-                    if ($cantidad <= 0) {
-                        // Eliminar item
-                        $carrito = array_filter($carrito, function($item) use ($id) {
-                            return $item['id'] != $id;
-                        });
-                    } else {
-                        $item['cantidad'] = $cantidad;
+        foreach ($request->cantidades as $itemId => $cantidad) {
+            $itemCarrito = CarritoTemporal::find($itemId);
+            
+            if ($itemCarrito) {
+                // Verificar permisos
+                if (Auth::check()) {
+                    if ($itemCarrito->usuario_id !== Auth::id()) continue;
+                } else {
+                    if ($itemCarrito->sesion_id !== session()->getId()) continue;
+                }
+
+                if ($cantidad == 0) {
+                    // Eliminar item si cantidad es 0
+                    $itemCarrito->delete();
+                } else {
+                    // Verificar stock
+                    if ($itemCarrito->producto->stock >= $cantidad) {
+                        $itemCarrito->update(['cantidad' => $cantidad]);
                     }
-                    break;
                 }
             }
         }
 
-        session(['carrito' => array_values($carrito)]);
-
-        return redirect()->back()->with('success', 'Carrito actualizado correctamente.');
+        return redirect()->route('carrito.index')->with('success', 'Carrito actualizado.');
     }
 
     public function eliminar($id)
     {
-        $carrito = session('carrito', []);
-        $carrito = array_filter($carrito, function($item) use ($id) {
-            return $item['id'] != $id;
-        });
+        $itemCarrito = CarritoTemporal::findOrFail($id);
 
-        session(['carrito' => array_values($carrito)]);
+        // Verificar permisos
+        if (Auth::check()) {
+            if ($itemCarrito->usuario_id !== Auth::id()) {
+                return redirect()->route('carrito.index')->with('error', 'No tienes permiso para eliminar este item.');
+            }
+        } else {
+            if ($itemCarrito->sesion_id !== session()->getId()) {
+                return redirect()->route('carrito.index')->with('error', 'No tienes permiso para eliminar este item.');
+            }
+        }
 
-        return redirect()->back()->with('success', 'Producto eliminado del carrito.');
+        $itemCarrito->delete();
+
+        return redirect()->route('carrito.index')->with('success', 'Producto eliminado del carrito.');
+    }
+
+    public function vaciar()
+    {
+        if (Auth::check()) {
+            CarritoTemporal::where('usuario_id', Auth::id())->delete();
+        } else {
+            CarritoTemporal::where('sesion_id', session()->getId())->delete();
+        }
+
+        return redirect()->route('carrito.index')->with('success', 'Carrito vaciado.');
     }
 }

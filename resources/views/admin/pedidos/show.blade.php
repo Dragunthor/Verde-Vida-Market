@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Gestionar Pedido #{{ $pedido['id'] }}</h2>
+    <h2>Gestionar Pedido #{{ $pedidoData['id'] }}</h2>
     <a href="{{ route('admin.pedidos') }}" class="btn btn-outline-secondary">
         <i class="fa fa-arrow-left"></i> Volver
     </a>
@@ -35,7 +35,7 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ asset('images/' . $detalle['imagen']) }}" 
+                                        <img src="{{ asset('storage/' . $detalle['imagen']) }}" 
                                              alt="{{ $detalle['producto_nombre'] }}" 
                                              class="img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: cover;">
                                         <div>
@@ -53,7 +53,7 @@
                         <tfoot class="table-success">
                             <tr>
                                 <td colspan="3" class="text-end"><strong>Total:</strong></td>
-                                <td><strong>S/ {{ number_format($pedido['total'], 2) }}</strong></td>
+                                <td><strong>S/ {{ number_format($pedidoData['total'], 2) }}</strong></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -71,18 +71,18 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <p><strong>Nombre:</strong> {{ $pedido['usuario_nombre'] }}</p>
-                        <p><strong>Email:</strong> {{ $pedido['email'] }}</p>
+                        <p><strong>Nombre:</strong> {{ $pedidoData['usuario_nombre'] }}</p>
+                        <p><strong>Email:</strong> {{ $pedidoData['email'] }}</p>
                     </div>
                     <div class="col-md-6">
-                        <p><strong>Teléfono:</strong> {{ $pedido['telefono'] }}</p>
-                        <p><strong>Dirección:</strong> {{ $pedido['direccion'] }}</p>
+                        <p><strong>Teléfono:</strong> {{ $pedidoData['telefono'] }}</p>
+                        <p><strong>Dirección:</strong> {{ $pedidoData['direccion'] }}</p>
                     </div>
                 </div>
-                @if(!empty($pedido['notas']))
+                @if(!empty($pedidoData['notas']))
                     <hr>
                     <p><strong>Notas del Pedido:</strong></p>
-                    <p class="text-muted">{{ $pedido['notas'] }}</p>
+                    <p class="text-muted">{{ $pedidoData['notas'] }}</p>
                 @endif
             </div>
         </div>
@@ -97,27 +97,28 @@
                 </h6>
             </div>
             <div class="card-body">
-                <form method="POST" action="">
+                <form method="POST" action="{{ route('admin.pedidos.update', $pedidoData['id']) }}">
                     @csrf
+                    @method('PUT')
                     <div class="mb-3">
                         <label for="estado" class="form-label">Estado Actual</label>
                         <select class="form-select" id="estado" name="estado" required>
-                            <option value="pendiente" {{ $pedido['estado'] == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                            <option value="confirmado" {{ $pedido['estado'] == 'confirmado' ? 'selected' : '' }}>Confirmado</option>
-                            <option value="preparando" {{ $pedido['estado'] == 'preparando' ? 'selected' : '' }}>Preparando</option>
-                            <option value="listo" {{ $pedido['estado'] == 'listo' ? 'selected' : '' }}>Listo para entrega</option>
-                            <option value="entregado" {{ $pedido['estado'] == 'entregado' ? 'selected' : '' }}>Entregado</option>
-                            <option value="cancelado" {{ $pedido['estado'] == 'cancelado' ? 'selected' : '' }}>Cancelado</option>
+                            <option value="pendiente" {{ $pedidoData['estado'] == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                            <option value="confirmado" {{ $pedidoData['estado'] == 'confirmado' ? 'selected' : '' }}>Confirmado</option>
+                            <option value="preparando" {{ $pedidoData['estado'] == 'preparando' ? 'selected' : '' }}>Preparando</option>
+                            <option value="listo" {{ $pedidoData['estado'] == 'listo' ? 'selected' : '' }}>Listo para entrega</option>
+                            <option value="entregado" {{ $pedidoData['estado'] == 'entregado' ? 'selected' : '' }}>Entregado</option>
+                            <option value="cancelado" {{ $pedidoData['estado'] == 'cancelado' ? 'selected' : '' }}>Cancelado</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
                         <p><strong>Información del Pedido:</strong></p>
                         <ul class="list-unstyled small">
-                            <li><strong>Pedido #:</strong> {{ $pedido['id'] }}</li>
-                            <li><strong>Fecha:</strong> {{ $pedido['fecha_pedido'] }}</li>
-                            <li><strong>Método Pago:</strong> {{ ucfirst($pedido['metodo_pago']) }}</li>
-                            <li><strong>Total:</strong> S/ {{ number_format($pedido['total'], 2) }}</li>
+                            <li><strong>Pedido #:</strong> {{ $pedidoData['id'] }}</li>
+                            <li><strong>Fecha:</strong> {{ $pedidoData['fecha_pedido'] }}</li>
+                            <li><strong>Método Pago:</strong> {{ ucfirst($pedidoData['metodo_pago']) }}</li>
+                            <li><strong>Total:</strong> S/ {{ number_format($pedidoData['total'], 2) }}</li>
                         </ul>
                     </div>
 

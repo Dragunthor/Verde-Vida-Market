@@ -18,6 +18,7 @@
                         <thead>
                             <tr>
                                 <th>Producto</th>
+                                <th>Vendedor</th>
                                 <th>Cantidad</th>
                                 <th>Precio</th>
                                 <th>Subtotal</th>
@@ -26,16 +27,23 @@
                         <tbody>
                             @foreach($carrito as $item)
                                 <tr>
-                                    <td>{{ $item['nombre'] }}</td>
-                                    <td>{{ $item['cantidad'] }} {{ $item['unidad'] }}</td>
-                                    <td>S/ {{ number_format($item['precio'], 2) }}</td>
-                                    <td>S/ {{ number_format($item['precio'] * $item['cantidad'], 2) }}</td>
+                                    <td>{{ $item->producto->nombre }}</td>
+                                    <td>
+                                        @if($item->producto->vendedor)
+                                            <small>{{ $item->producto->vendedor->nombre }}</small>
+                                        @else
+                                            <small class="text-muted">Admin</small>
+                                        @endif
+                                    </td>
+                                    <td>{{ $item->cantidad }} {{ $item->producto->unidad }}</td>
+                                    <td>S/ {{ number_format($item->producto->precio, 2) }}</td>
+                                    <td>S/ {{ number_format($item->producto->precio * $item->cantidad, 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="table-success">
                             <tr>
-                                <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                <td colspan="4" class="text-end"><strong>Total:</strong></td>
                                 <td><strong>S/ {{ number_format($total, 2) }}</strong></td>
                             </tr>
                         </tfoot>
@@ -45,7 +53,7 @@
         </div>
 
         <!-- Formulario de Checkout -->
-        <form method="POST" action="{{ route('pedidos.checkout') }}">
+        <form method="POST" action="{{ route('pedidos.store') }}">
             @csrf
             <div class="card mb-4">
                 <div class="card-header bg-light">
@@ -54,8 +62,12 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="direccion_entrega" class="form-label">Dirección de Entrega *</label>
-                        <textarea class="form-control" id="direccion_entrega" name="direccion_entrega" 
-                                  rows="3" required>{{ $usuario['direccion'] ?? '' }}</textarea>
+                        <textarea class="form-control @error('direccion_entrega') is-invalid @enderror" 
+                                  id="direccion_entrega" name="direccion_entrega" 
+                                  rows="3" required>{{ old('direccion_entrega', auth()->user()->direccion ?? '') }}</textarea>
+                        @error('direccion_entrega')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                         <div class="form-text">Dirección donde entregaremos tu pedido</div>
                     </div>
                     
@@ -63,11 +75,11 @@
                         <label class="form-label">Información de Contacto</label>
                         <div class="row">
                             <div class="col-md-6">
-                                <input type="text" class="form-control" value="{{ $usuario['nombre'] }}" readonly>
+                                <input type="text" class="form-control" value="{{ auth()->user()->nombre }}" readonly>
                                 <small class="form-text text-muted">Nombre</small>
                             </div>
                             <div class="col-md-6">
-                                <input type="tel" class="form-control" value="{{ $usuario['telefono'] ?? '' }}" readonly>
+                                <input type="tel" class="form-control" value="{{ auth()->user()->telefono ?? 'No especificado' }}" readonly>
                                 <small class="form-text text-muted">Teléfono</small>
                             </div>
                         </div>
@@ -93,12 +105,21 @@
                                 <strong>Transferencia Bancaria</strong>
                             </label>
                         </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="metodo_pago" id="tarjeta" value="tarjeta">
+                            <label class="form-check-label" for="tarjeta">
+                                <strong>Tarjeta de Crédito/Débito</strong>
+                            </label>
+                        </div>
+                        @error('metodo_pago')
+                            <div class="text-danger small">{{ $message }}</div>
+                        @enderror
                     </div>
                     
                     <div class="mb-3">
                         <label for="notas" class="form-label">Notas Adicionales</label>
                         <textarea class="form-control" id="notas" name="notas" rows="3" 
-                                  placeholder="Instrucciones especiales para la entrega..."></textarea>
+                                  placeholder="Instrucciones especiales para la entrega...">{{ old('notas') }}</textarea>
                     </div>
                 </div>
             </div>
@@ -121,9 +142,14 @@
                 <h6>Productos en tu pedido:</h6>
                 <ul class="list-unstyled small mb-3">
                     @foreach($carrito as $item)
-                        <li class="d-flex justify-content-between">
-                            <span>{{ $item['nombre'] }} (x{{ $item['cantidad'] }})</span>
-                            <span>S/ {{ number_format($item['precio'] * $item['cantidad'], 2) }}</span>
+                        <li class="d-flex justify-content-between mb-2">
+                            <div>
+                                <span>{{ $item->producto->nombre }} (x{{ $item->cantidad }})</span>
+                                @if($item->producto->vendedor)
+                                    <br><small class="text-muted">{{ $item->producto->vendedor->nombre }}</small>
+                                @endif
+                            </div>
+                            <span>S/ {{ number_format($item->producto->precio * $item->cantidad, 2) }}</span>
                         </li>
                     @endforeach
                 </ul>
@@ -138,7 +164,8 @@
                 <div class="alert alert-info small">
                     <i class="fa fa-info-circle"></i> 
                     <strong>Entrega estimada:</strong> 24-48 horas<br>
-                    <strong>Horario:</strong> Lunes a Sábado 9:00 - 18:00
+                    <strong>Horario:</strong> Lunes a Sábado 9:00 - 18:00<br>
+                    <strong>Envío:</strong> Gratis
                 </div>
             </div>
         </div>

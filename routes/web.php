@@ -8,7 +8,8 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\VendedorController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PerfilController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\CategoriaController;
+use App\Http\Controllers\Admin\ProductoController as AdminProductoController;
 
 // Página principal
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -20,15 +21,15 @@ Route::get('/register', [AuthController::class, 'showRegister'])->name('register
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// Productos
+// Productos públicos
 Route::get('/productos', [ProductoController::class, 'index'])->name('productos.index');
 Route::get('/productos/{id}', [ProductoController::class, 'show'])->name('productos.show');
 
-// Vendedores
+// Vendedores públicos
 Route::get('/vendedores', [VendedorController::class, 'index'])->name('vendedores.index');
 Route::get('/vendedores/{id}', [VendedorController::class, 'show'])->name('vendedores.show');
 
-// Rutas protegidas (solo auth básico)
+// Rutas protegidas
 Route::middleware(['auth'])->group(function () {
     // Perfil
     Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
@@ -38,18 +39,23 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/carrito', [CarritoController::class, 'index'])->name('carrito.index');
     Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])->name('carrito.agregar');
     Route::put('/carrito/actualizar/{id}', [CarritoController::class, 'actualizar'])->name('carrito.actualizar');
+    Route::post('/carrito/actualizar-todo', [CarritoController::class, 'actualizarTodo'])->name('carrito.actualizar-todo');
     Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
+    Route::delete('/carrito/vaciar', [CarritoController::class, 'vaciar'])->name('carrito.vaciar');
 
     // Pedidos
     Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
     Route::get('/pedidos/{id}', [PedidoController::class, 'show'])->name('pedidos.show');
+    Route::get('/checkout', [PedidoController::class, 'checkout'])->name('pedidos.checkout');
     Route::post('/pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
+    Route::get('/pedidos/{id}/confirmacion', [PedidoController::class, 'confirmacion'])->name('pedidos.confirmacion');
+    Route::put('/pedidos/{id}/cancelar', [PedidoController::class, 'cancelar'])->name('pedidos.cancelar');
 
     // Vendedor
     Route::get('/vendedor/solicitud', [VendedorController::class, 'solicitud'])->name('vendedor.solicitud');
     Route::post('/vendedor/solicitud', [VendedorController::class, 'enviarSolicitud'])->name('vendedor.enviarSolicitud');
     
-    // Rutas de vendedor - las verificaciones van en el controlador
+    // Rutas de vendedor (las verificaciones van en el controlador)
     Route::get('/vendedor/dashboard', [VendedorController::class, 'dashboard'])->name('vendedor.dashboard');
     Route::get('/vendedor/productos', [VendedorController::class, 'productos'])->name('vendedor.productos');
     Route::get('/vendedor/productos/crear', [VendedorController::class, 'crearProducto'])->name('vendedor.productos.crear');
@@ -60,9 +66,49 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendedor/ventas', [VendedorController::class, 'ventas'])->name('vendedor.ventas');
 
     // Admin - las verificaciones van en el controlador
-    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::get('/admin/vendedores', [AdminController::class, 'vendedores'])->name('admin.vendedores');
-    Route::get('/admin/productos', [AdminController::class, 'productos'])->name('admin.productos');
-    Route::put('/admin/vendedores/{id}/aprobar', [AdminController::class, 'aprobarVendedor'])->name('admin.vendedores.aprobar');
-    Route::put('/admin/productos/{id}/aprobar', [AdminController::class, 'aprobarProducto'])->name('admin.productos.aprobar');
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        
+        // Vendedores
+        Route::get('/vendedores', [AdminController::class, 'vendedores'])->name('vendedores');
+        Route::put('/vendedores/{id}/aprobar', [AdminController::class, 'aprobarVendedor'])->name('vendedores.aprobar');
+        Route::get('/vendedores/{id}', [AdminController::class, 'mostrarVendedor'])->name('vendedores.show');
+        
+        // Productos
+        Route::get('/productos', [AdminProductoController::class, 'index'])->name('productos.index');
+        Route::get('/productos/pendientes', [AdminProductoController::class, 'pendientes'])->name('productos.pendientes');
+        Route::get('/productos/crear', [AdminProductoController::class, 'create'])->name('productos.create');
+        Route::post('/productos', [AdminProductoController::class, 'store'])->name('productos.store');
+        Route::get('/productos/{id}/editar', [AdminProductoController::class, 'edit'])->name('productos.edit');
+        Route::put('/productos/{id}', [AdminProductoController::class, 'update'])->name('productos.update');
+        Route::delete('/productos/{id}', [AdminProductoController::class, 'destroy'])->name('productos.destroy');
+        Route::put('/productos/{id}/aprobar', [AdminProductoController::class, 'aprobar'])->name('productos.aprobar');
+        Route::put('/productos/{id}/toggle-activo', [AdminProductoController::class, 'toggleActivo'])->name('productos.toggle-activo');
+        
+        // Categorías
+        Route::get('/categorias', [CategoriaController::class, 'index'])->name('categorias.index');
+        Route::get('/categorias/crear', [CategoriaController::class, 'create'])->name('categorias.create');
+        Route::post('/categorias', [CategoriaController::class, 'store'])->name('categorias.store');
+        Route::get('/categorias/{id}/editar', [CategoriaController::class, 'edit'])->name('categorias.edit');
+        Route::put('/categorias/{id}', [CategoriaController::class, 'update'])->name('categorias.update');
+        Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
+        
+        // Usuarios
+        Route::get('/usuarios', [AdminController::class, 'usuarios'])->name('usuarios');
+        
+        // Pedidos
+        Route::get('/pedidos', [AdminController::class, 'pedidos'])->name('pedidos');
+        Route::get('/pedidos/{id}', [AdminController::class, 'mostrarPedido'])->name('pedidos.show');
+        Route::put('/pedidos/{id}/actualizar', [AdminController::class, 'actualizarPedido'])->name('pedidos.update');
+        
+        // Reportes
+        Route::get('/reportes', [AdminController::class, 'reportes'])->name('reportes');
+        
+        // Reseñas
+        Route::get('/resenas', [AdminController::class, 'resenas'])->name('resenas');
+        
+        // Configuración
+        Route::get('/configuracion', [AdminController::class, 'configuracion'])->name('configuracion');
+    });
 });

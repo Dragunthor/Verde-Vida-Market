@@ -25,12 +25,15 @@ class AuthController extends Controller
 
         if ($usuario && Hash::check($credentials['password'], $usuario->password)) {
             Auth::login($usuario);
-            return redirect()->intended('/')->with('success', 'Bienvenido ' . $usuario->nombre);
+            
+            // Redireccionar a la página solicitada o al home
+            $redirect = $request->input('redirect', '/');
+            return redirect($redirect)->with('success', '¡Bienvenido ' . $usuario->nombre . '!');
         }
 
         return back()->withErrors([
             'email' => 'Las credenciales no coinciden con nuestros registros.',
-        ]);
+        ])->withInput($request->only('email'));
     }
 
     public function showRegister()
@@ -45,7 +48,12 @@ class AuthController extends Controller
             'email' => 'required|email|unique:usuarios',
             'password' => 'required|min:6|confirmed',
             'telefono' => 'nullable|string|max:20',
-            'direccion' => 'nullable|string'
+            'direccion' => 'nullable|string|max:500',
+            'terminos' => 'required|accepted'
+        ], [
+            'terminos.required' => 'Debes aceptar los términos y condiciones.',
+            'terminos.accepted' => 'Debes aceptar los términos y condiciones.',
+            'password.confirmed' => 'Las contraseñas no coinciden.'
         ]);
 
         $usuario = Usuario::create([
@@ -54,12 +62,13 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'telefono' => $request->telefono,
             'direccion' => $request->direccion,
-            'rol' => 'cliente'
+            'rol' => 'cliente',
+            'activo' => true
         ]);
 
         Auth::login($usuario);
 
-        return redirect('/')->with('success', 'Cuenta creada exitosamente. ¡Bienvenido a VerdeVida Market!');
+        return redirect('/')->with('success', '¡Cuenta creada exitosamente! Bienvenido a VerdeVida Market.');
     }
 
     public function logout(Request $request)

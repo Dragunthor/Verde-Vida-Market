@@ -19,7 +19,7 @@
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
                     <img src="{{ $producto->imagen ? asset('storage/' . $producto->imagen) : asset('images/placeholder.jpg') }}" 
-                         class="card-img-top" alt="{{ $producto->nombre }}">
+                         class="card-img-top" alt="{{ $producto->nombre }}" style="height: 200px; object-fit: cover;">
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">{{ $producto->nombre }}</h5>
                         <p class="card-text flex-grow-1">{{ Str::limit($producto->descripcion, 100) }}</p>

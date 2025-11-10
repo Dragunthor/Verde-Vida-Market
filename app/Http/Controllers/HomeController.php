@@ -11,7 +11,7 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $productosDestacados = Producto::with('vendedor.perfilVendedor')
+        $productosDestacados = Producto::with(['vendedor.perfilVendedor', 'categoria'])
             ->where('activo', true)
             ->where('aprobado', true)
             ->where('stock', '>', 0)
@@ -30,6 +30,6 @@ class HomeController extends Controller
             ->take(5)
             ->get();
 
-        return view('productos.index', compact('productosDestacados', 'categorias', 'vendedoresDestacados'));
+        return view('home', compact('productosDestacados', 'categorias', 'vendedoresDestacados'));
     }
 }

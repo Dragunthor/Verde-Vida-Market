@@ -33,14 +33,14 @@
                         <td>{{ $pedido['fecha_pedido'] }}</td>
                         <td>S/ {{ number_format($pedido['total'], 2) }}</td>
                         <td>
-                            <span class="badge bg-{{ $pedido['estado'] == 'pendiente' ? 'warning' : ($pedido['estado'] == 'confirmado' ? 'info' : 'success') }}">
+                            <span class="badge bg-{{ $pedido['estado'] == 'pendiente' ? 'warning' : ($pedido['estado'] == 'confirmado' ? 'info' : ($pedido['estado'] == 'entregado' ? 'success' : ($pedido['estado'] == 'cancelado' ? 'danger' : 'secondary'))) }}">
                                 {{ ucfirst($pedido['estado']) }}
                             </span>
                         </td>
                         <td>{{ ucfirst($pedido['metodo_pago']) }}</td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ route('admin.pedidos.gestionar', $pedido['id']) }}" 
+                                <a href="{{ route('admin.pedidos.show', $pedido['id']) }}" 
                                    class="btn btn-outline-primary" title="Gestionar">
                                     <i class="fa fa-edit"></i>
                                 </a>

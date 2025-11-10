@@ -3,134 +3,63 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Producto;
+use App\Models\Categoria;
+use App\Models\Usuario;
 
 class ProductoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Datos de ejemplo para la vista
-        $productosDestacados = [
-            [
-                'id' => 1,
-                'nombre' => 'Manzanas Orgánicas',
-                'descripcion' => 'Manzanas frescas cultivadas localmente sin pesticidas',
-                'precio' => 8.50,
-                'imagen' => 'placeholder.jpg',
-                'unidad' => 'Kg'
-            ],
-            [
-                'id' => 2,
-                'nombre' => 'Plátanos Ecológicos',
-                'descripcion' => 'Plátanos de cultivo ecológico y sostenible',
-                'precio' => 6.80,
-                'imagen' => 'placeholder.jpg',
-                'unidad' => 'Kg'
-            ],
-            [
-                'id' => 3,
-                'nombre' => 'Lechuga Romana',
-                'descripcion' => 'Lechuga romana fresca de cultivo orgánico',
-                'precio' => 4.20,
-                'imagen' => 'placeholder.jpg',
-                'unidad' => 'Unidad'
-            ]
-        ];
+        $query = Producto::with(['categoria', 'vendedor.perfilVendedor'])
+            ->where('activo', true)
+            ->where('aprobado', true);
 
-        $categorias = [
-            ['id' => 1, 'nombre' => 'Frutas Orgánicas'],
-            ['id' => 2, 'nombre' => 'Verduras Ecológicas'],
-            ['id' => 3, 'nombre' => 'Lácteos Naturales']
-        ];
+        // Filtro por búsqueda
+        if ($request->has('busqueda') && $request->busqueda != '') {
+            $query->where('nombre', 'like', '%' . $request->busqueda . '%')
+                  ->orWhere('descripcion', 'like', '%' . $request->busqueda . '%');
+        }
 
-        return view('productos.index', compact('productosDestacados', 'categorias'));
-    }
+        // Filtro por categoría
+        if ($request->has('categoria') && $request->categoria != '') {
+            $query->where('categoria_id', $request->categoria);
+        }
 
-    public function catalog(Request $request)
-    {
-        $categoriaId = $request->get('categoria');
-        $busqueda = $request->get('busqueda');
+        // Filtro por vendedor
+        if ($request->has('vendedor') && $request->vendedor != '') {
+            $query->where('vendedor_id', $request->vendedor);
+        }
 
-        // Datos de ejemplo
-        $productos = [
-            [
-                'id' => 1,
-                'nombre' => 'Manzanas Orgánicas',
-                'descripcion' => 'Manzanas frescas cultivadas localmente sin pesticidas',
-                'precio' => 8.50,
-                'imagen' => 'placeholder.jpg',
-                'unidad' => 'Kg',
-                'stock' => 50,
-                'origen' => 'Local',
-                'categoria_nombre' => 'Frutas Orgánicas'
-            ],
-            [
-                'id' => 2,
-                'nombre' => 'Plátanos Ecológicos',
-                'descripcion' => 'Plátanos de cultivo ecológico y sostenible',
-                'precio' => 6.80,
-                'imagen' => 'placeholder.jpg',
-                'unidad' => 'Kg',
-                'stock' => 30,
-                'origen' => 'Local',
-                'categoria_nombre' => 'Frutas Orgánicas'
-            ],
-            [
-                'id' => 3,
-                'nombre' => 'Lechuga Romana',
-                'descripcion' => 'Lechuga romana fresca de cultivo orgánico',
-                'precio' => 4.20,
-                'imagen' => 'placeholder.jpg',
-                'unidad' => 'Unidad',
-                'stock' => 25,
-                'origen' => 'Local',
-                'categoria_nombre' => 'Verduras Ecológicas'
-            ]
-        ];
+        $productos = $query->orderBy('created_at', 'desc')->paginate(12);
+        $categorias = Categoria::all();
+        $vendedores = Usuario::where('rol', 'vendedor')
+            ->whereHas('perfilVendedor', function($q) {
+                $q->where('activo_vendedor', true);
+            })->get();
 
-        $categorias = [
-            ['id' => 1, 'nombre' => 'Frutas Orgánicas'],
-            ['id' => 2, 'nombre' => 'Verduras Ecológicas'],
-            ['id' => 3, 'nombre' => 'Lácteos Naturales']
-        ];
-
-        return view('productos.catalog', compact('productos', 'categorias', 'categoriaId', 'busqueda'));
+        return view('productos.catalog', compact('productos', 'categorias', 'vendedores'));
     }
 
     public function show($id)
     {
-        // Datos de ejemplo
-        $producto = [
-            'id' => $id,
-            'nombre' => 'Manzanas Orgánicas',
-            'descripcion' => "Manzanas frescas cultivadas localmente sin pesticidas. Nuestras manzanas son cosechadas en el momento óptimo de maduración para garantizar el mejor sabor y textura.\n\nBeneficios:\n• Rico en fibra y vitaminas\n• Cultivo sostenible\n• Sin químicos ni conservantes",
-            'precio' => 8.50,
-            'imagen' => 'placeholder.jpg',
-            'unidad' => 'Kg',
-            'stock' => 50,
-            'origen' => 'Local',
-            'categoria_id' => 1,
-            'categoria_nombre' => 'Frutas Orgánicas'
-        ];
+        $producto = Producto::with([
+            'categoria', 
+            'vendedor.perfilVendedor',
+            'resenas.usuario'
+        ])->findOrFail($id);
 
-        $relacionados = [
-            [
-                'id' => 2,
-                'nombre' => 'Plátanos Ecológicos',
-                'descripcion' => 'Plátanos de cultivo ecológico y sostenible',
-                'precio' => 6.80,
-                'imagen' => 'placeholder.jpg',
-                'unidad' => 'Kg'
-            ],
-            [
-                'id' => 4,
-                'nombre' => 'Tomates Cherry',
-                'descripcion' => 'Tomates cherry cultivados naturalmente',
-                'precio' => 7.90,
-                'imagen' => 'placeholder.jpg',
-                'unidad' => 'Kg'
-            ]
-        ];
+        // Productos relacionados (misma categoría, excluyendo el actual)
+        $productosRelacionados = Producto::with('vendedor.perfilVendedor')
+            ->where('categoria_id', $producto->categoria_id)
+            ->where('id', '!=', $producto->id)
+            ->where('activo', true)
+            ->where('aprobado', true)
+            ->where('stock', '>', 0)
+            ->inRandomOrder()
+            ->take(3)
+            ->get();
 
-        return view('productos.show', compact('producto', 'relacionados'));
+        return view('productos.show', compact('producto', 'productosRelacionados'));
     }
 }
