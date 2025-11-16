@@ -149,4 +149,144 @@ class AdminController extends Controller
 
         return redirect('/admin/productos')->with('success', 'Producto aprobado exitosamente.');
     }
+
+    // Métodos para Reportes
+    public function reportes()
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $reportesPendientes = Reporte::with('usuario')
+            ->where('estado', 'pendiente')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $reportesEnRevision = Reporte::with('usuario')
+            ->where('estado', 'en_revision')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $reportesResueltos = Reporte::with('usuario')
+            ->where('estado', 'resuelto')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.reportes.index', compact('reportesPendientes', 'reportesEnRevision', 'reportesResueltos'));
+    }
+
+    public function mostrarReporte($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $reporte = Reporte::with(['usuario', 'mensajes'])->findOrFail($id);
+        
+        // Obtener el objeto reportado según el tipo
+        $objetoReportado = null;
+        switch ($reporte->tipo) {
+            case 'producto':
+                $objetoReportado = \App\Models\Producto::find($reporte->objeto_id);
+                break;
+            case 'vendedor':
+                $objetoReportado = \App\Models\Usuario::find($reporte->objeto_id);
+                break;
+            case 'pedido':
+                $objetoReportado = \App\Models\Pedido::find($reporte->objeto_id);
+                break;
+        }
+
+        return view('admin.reportes.show', compact('reporte', 'objetoReportado'));
+    }
+
+    public function actualizarEstadoReporte(Request $request, $id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $request->validate([
+            'estado' => 'required|in:pendiente,en_revision,resuelto'
+        ]);
+
+        $reporte = Reporte::findOrFail($id);
+        $reporte->update(['estado' => $request->estado]);
+
+        return redirect()->route('admin.reportes.show', $reporte->id)
+            ->with('success', 'Estado del reporte actualizado correctamente.');
+    }
+
+    // Métodos para Reseñas
+    public function resenas()
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $resenasProductosPendientes = ResenaProducto::with(['producto', 'usuario'])
+            ->where('aprobado', false)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $resenasVendedoresPendientes = ResenaVendedor::with(['vendedor', 'usuario'])
+            ->where('aprobado', false)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.resenas.index', compact('resenasProductosPendientes', 'resenasVendedoresPendientes'));
+    }
+
+    public function aprobarResenaProducto($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $resena = ResenaProducto::findOrFail($id);
+        $resena->update(['aprobado' => true]);
+
+        return redirect()->route('admin.resenas')->with('success', 'Reseña de producto aprobada.');
+    }
+
+    public function rechazarResenaProducto($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $resena = ResenaProducto::findOrFail($id);
+        $resena->delete();
+
+        return redirect()->route('admin.resenas')->with('success', 'Reseña de producto rechazada y eliminada.');
+    }
+
+    public function aprobarResenaVendedor($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $resena = ResenaVendedor::findOrFail($id);
+        $resena->update(['aprobado' => true]);
+
+        // Actualizar la calificación del vendedor
+        $vendedor = $resena->vendedor;
+        if ($vendedor->perfilVendedor) {
+            $vendedor->perfilVendedor->actualizarCalificacion();
+        }
+
+        return redirect()->route('admin.resenas')->with('success', 'Reseña de vendedor aprobada.');
+    }
+
+    public function rechazarResenaVendedor($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $resena = ResenaVendedor::findOrFail($id);
+        $resena->delete();
+
+        return redirect()->route('admin.resenas')->with('success', 'Reseña de vendedor rechazada y eliminada.');
+    }
+    public function configuracion()
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        return view('admin.configuracion.index');
+    }
 }

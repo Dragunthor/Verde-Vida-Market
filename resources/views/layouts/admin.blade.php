@@ -91,7 +91,7 @@
                             <a class="nav-link {{ request()->routeIs('admin.vendedores*') ? 'active' : '' }}" 
                                href="{{ route('admin.vendedores') }}">
                                 <i class="fa fa-users"></i> Vendedores
-                                @if($vendedoresPendientesCount > 0)
+                                @if(isset($vendedoresPendientesCount) && $vendedoresPendientesCount > 0)
                                     <span class="badge bg-warning">{{ $vendedoresPendientesCount }}</span>
                                 @endif
                             </a>
@@ -100,9 +100,9 @@
                         <!-- Gestión de Productos -->
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.productos*') ? 'active' : '' }}" 
-                               href="{{ route('admin.productos') }}">
+                               href="{{ route('admin.productos.index') }}">
                                 <i class="fa fa-cube"></i> Productos
-                                @if($productosPendientesCount > 0)
+                                @if(isset($productosPendientesCount) && $productosPendientesCount > 0)
                                     <span class="badge bg-warning">{{ $productosPendientesCount }}</span>
                                 @endif
                             </a>
@@ -111,7 +111,7 @@
                         <!-- Gestión de Categorías -->
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.categorias*') ? 'active' : '' }}" 
-                               href="{{ route('admin.categorias') }}">
+                               href="{{ route('admin.categorias.index') }}">
                                 <i class="fa fa-tags"></i> Categorías
                             </a>
                         </li>
@@ -127,7 +127,7 @@
                         <!-- Gestión de Usuarios/Clientes -->
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.usuarios*') ? 'active' : '' }}" 
-                               href="{{ route('admin.usuarios') }}">
+                               href="{{ route('admin.clientes.index') }}">
                                 <i class="fa fa-user"></i> Usuarios
                             </a>
                         </li>
@@ -137,7 +137,7 @@
                             <a class="nav-link {{ request()->routeIs('admin.reportes*') ? 'active' : '' }}" 
                                href="{{ route('admin.reportes') }}">
                                 <i class="fa fa-flag"></i> Reportes
-                                @if($reportesPendientesCount > 0)
+                                @if(isset($vendedoresPendientesCount) && $vendedoresPendientesCount > 0)
                                     <span class="badge bg-danger">{{ $reportesPendientesCount }}</span>
                                 @endif
                             </a>
@@ -148,7 +148,7 @@
                             <a class="nav-link {{ request()->routeIs('admin.resenas*') ? 'active' : '' }}" 
                                href="{{ route('admin.resenas') }}">
                                 <i class="fa fa-star"></i> Reseñas
-                                @if($resenasPendientesCount > 0)
+                                @if(isset($resenasPendientesCount) && $resenasPendientesCount > 0)
                                     <span class="badge bg-warning">{{ $resenasPendientesCount }}</span>
                                 @endif
                             </a>

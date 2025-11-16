@@ -10,6 +10,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ProductoController as AdminProductoController;
+use App\Http\Controllers\Admin\ClienteController;
 
 // Página principal
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -55,6 +56,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendedor/solicitud', [VendedorController::class, 'solicitud'])->name('vendedor.solicitud');
     Route::post('/vendedor/solicitud', [VendedorController::class, 'enviarSolicitud'])->name('vendedor.enviarSolicitud');
     
+    
     // Rutas de vendedor (las verificaciones van en el controlador)
     Route::get('/vendedor/dashboard', [VendedorController::class, 'dashboard'])->name('vendedor.dashboard');
     Route::get('/vendedor/productos', [VendedorController::class, 'productos'])->name('vendedor.productos');
@@ -74,6 +76,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/vendedores', [AdminController::class, 'vendedores'])->name('vendedores');
         Route::put('/vendedores/{id}/aprobar', [AdminController::class, 'aprobarVendedor'])->name('vendedores.aprobar');
         Route::get('/vendedores/{id}', [AdminController::class, 'mostrarVendedor'])->name('vendedores.show');
+        Route::get('/vendedores/{id}/editar', [AdminController::class, 'editarVendedor'])->name('vendedores.edit');
+        Route::put('/vendedores/{id}', [AdminController::class, 'actualizarVendedor'])->name('vendedores.update');
+        Route::get('/vendedores/{id}/productos', [AdminController::class, 'productosVendedor'])->name('vendedores.productos');
         
         // Productos
         Route::get('/productos', [AdminProductoController::class, 'index'])->name('productos.index');
@@ -95,7 +100,12 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
         
         // Usuarios
-        Route::get('/usuarios', [AdminController::class, 'usuarios'])->name('usuarios');
+        Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
+        Route::get('/clientes/{id}', [ClienteController::class, 'show'])->name('clientes.show');
+        Route::get('/clientes/{id}/editar', [ClienteController::class, 'edit'])->name('clientes.edit');
+        Route::put('/clientes/{id}', [ClienteController::class, 'update'])->name('clientes.update');
+        Route::put('/clientes/{id}/toggle-activo', [ClienteController::class, 'toggleActivo'])->name('clientes.toggle-activo');
+        Route::get('/clientes/{id}/pedidos', [ClienteController::class, 'historialPedidos'])->name('clientes.pedidos');
         
         // Pedidos
         Route::get('/pedidos', [AdminController::class, 'pedidos'])->name('pedidos');
@@ -104,9 +114,15 @@ Route::middleware(['auth'])->group(function () {
         
         // Reportes
         Route::get('/reportes', [AdminController::class, 'reportes'])->name('reportes');
-        
+        Route::get('/reportes/{id}', [AdminController::class, 'mostrarReporte'])->name('reportes.show');
+        Route::put('/reportes/{id}/estado', [AdminController::class, 'actualizarEstadoReporte'])->name('reportes.estado');
+
         // Reseñas
         Route::get('/resenas', [AdminController::class, 'resenas'])->name('resenas');
+        Route::put('/resenas/producto/{id}/aprobar', [AdminController::class, 'aprobarResenaProducto'])->name('resenas.producto.aprobar');
+        Route::delete('/resenas/producto/{id}/rechazar', [AdminController::class, 'rechazarResenaProducto'])->name('resenas.producto.rechazar');
+        Route::put('/resenas/vendedor/{id}/aprobar', [AdminController::class, 'aprobarResenaVendedor'])->name('resenas.vendedor.aprobar');
+        Route::delete('/resenas/vendedor/{id}/rechazar', [AdminController::class, 'rechazarResenaVendedor'])->name('resenas.vendedor.rechazar');
         
         // Configuración
         Route::get('/configuracion', [AdminController::class, 'configuracion'])->name('configuracion');
