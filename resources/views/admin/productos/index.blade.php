@@ -10,12 +10,7 @@
         <a href="{{ route('admin.productos.create') }}" class="btn btn-success">
             <i class="fa fa-plus"></i> Nuevo Producto
         </a>
-        <a href="{{ route('admin.productos.pendientes') }}" class="btn btn-warning">
-            <i class="fa fa-clock-o"></i> Pendientes
-            @if($productosPendientesCount > 0)
-                <span class="badge bg-danger">{{ $productosPendientesCount }}</span>
-            @endif
-        </a>
+        
     </div>
 </div>
 
@@ -133,16 +128,7 @@
                                    class="btn btn-outline-primary" title="Editar">
                                     <i class="fa fa-edit"></i>
                                 </a>
-                                
-                                @if(!$producto->aprobado)
-                                    <form method="POST" action="{{ route('admin.productos.aprobar', $producto->id) }}" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline-success" title="Aprobar">
-                                            <i class="fa fa-check"></i>
-                                        </button>
-                                    </form>
-                                @endif
-                                
+                                                                                               
                                 <button type="button" class="btn btn-outline-danger" 
                                         data-bs-toggle="modal" 
                                         data-bs-target="#deleteModal{{ $producto->id }}"

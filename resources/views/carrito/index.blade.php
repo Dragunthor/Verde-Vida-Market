@@ -8,7 +8,8 @@
         <h2><i class="fa fa-shopping-cart"></i> Mi Carrito de Compras</h2>
         
         @if($carrito->count() > 0)
-            <form method="POST" action="{{ route('carrito.actualizar-todo') }}">
+            <!-- Formulario principal para actualizar cantidades -->
+            <form method="POST" action="{{ route('carrito.actualizar-todo') }}" id="form-actualizar-carrito">
                 @csrf
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -23,7 +24,7 @@
                         </thead>
                         <tbody>
                             @foreach($carrito as $item)
-                                <tr>
+                                <tr data-producto-precio="{{ $item->producto->precio }}">
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <img src="{{ $item->producto->imagen ? asset('storage/' . $item->producto->imagen) : asset('images/placeholder.jpg') }}" 
@@ -42,28 +43,26 @@
                                         </div>
                                     </td>
                                     <td class="align-middle">
-                                        S/ {{ number_format($item->producto->precio, 2) }}
+                                        S/ <span class="precio-unitario">{{ number_format($item->producto->precio, 2) }}</span>
                                     </td>
                                     <td class="align-middle">
                                         <input type="number" name="cantidades[{{ $item->id }}]" 
                                                value="{{ $item->cantidad }}" 
                                                min="1" max="{{ $item->producto->stock }}" 
-                                               class="form-control" style="width: 80px;"
-                                               onchange="this.form.submit()">
-                                        <small class="text-muted">Máx: {{ $item->producto->stock }}</small>
+                                               class="form-control input-cantidad" style="width: 80px;"
+                                               data-item-id="{{ $item->id }}">
+                                        <small class="text-muted stock-info" data-stock="{{ $item->producto->stock }}">
+                                            Disponible: {{ $item->producto->stock }}
+                                        </small>
                                     </td>
                                     <td class="align-middle">
-                                        <strong>S/ {{ number_format($item->producto->precio * $item->cantidad, 2) }}</strong>
+                                        <strong class="subtotal">S/ {{ number_format($item->producto->precio * $item->cantidad, 2) }}</strong>
                                     </td>
                                     <td class="align-middle">
-                                        <form method="POST" action="{{ route('carrito.eliminar', $item->id) }}" class="d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm" 
-                                                    onclick="return confirm('¿Estás seguro de eliminar este producto del carrito?')">
-                                                <i class="fa fa-trash"></i>
-                                            </button>
-                                        </form>
+                                        <button type="button" class="btn btn-danger btn-sm" 
+                                                onclick="eliminarItem({{ $item->id }}, '{{ $item->producto->nombre }}')">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -108,7 +107,7 @@
                     
                     <div class="d-flex justify-content-between mb-3">
                         <span>Subtotal:</span>
-                        <span>S/ {{ number_format($subtotal, 2) }}</span>
+                        <span id="resumen-subtotal">S/ {{ number_format($subtotal, 2) }}</span>
                     </div>
                     <div class="d-flex justify-content-between mb-3">
                         <span>Envío:</span>
@@ -117,7 +116,7 @@
                     <hr>
                     <div class="d-flex justify-content-between mb-4">
                         <strong>Total:</strong>
-                        <strong class="h5 text-success">S/ {{ number_format($subtotal, 2) }}</strong>
+                        <strong class="h5 text-success" id="resumen-total">S/ {{ number_format($subtotal, 2) }}</strong>
                     </div>
                     
                     @auth
@@ -164,4 +163,123 @@
     </div>
 </div>
 @endif
+
+{{-- Sección de acciones --}}
+@if($carrito->count() > 0)
+<div class="row mt-4">
+    <div class="col-md-8">
+        <a href="{{ route('productos.index') }}" class="btn btn-outline-success">
+            <i class="fa fa-arrow-left"></i> Seguir Comprando
+        </a>
+    </div>
+    <div class="col-md-4 text-end">
+        @auth
+            <a href="{{ route('pedidos.checkout') }}" class="btn btn-success btn-lg">
+                <i class="fa fa-credit-card"></i> Proceder al Pago
+            </a>
+        @else
+            <div class="d-grid gap-2">
+                <a href="{{ route('login') }}" class="btn btn-success btn-lg">
+                    <i class="fa fa-sign-in"></i> Iniciar Sesión para Comprar
+                </a>
+                <small class="text-muted">O <a href="{{ route('register') }}">regístrate</a> si no tienes cuenta</small>
+            </div>
+        @endauth
+    </div>
+</div>
+@endif
+
+{{-- Formularios ocultos para eliminar items --}}
+@foreach($carrito as $item)
+<form method="POST" action="{{ route('carrito.eliminar', $item->id) }}" id="form-eliminar-{{ $item->id }}" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
+@endforeach
+
+<script>
+// Función para eliminar items del carrito
+function eliminarItem(itemId, productoNombre) {
+    if (confirm(`¿Estás seguro de eliminar "${productoNombre}" del carrito?`)) {
+        document.getElementById(`form-eliminar-${itemId}`).submit();
+    }
+}
+
+// Función para actualizar los subtotales y el total
+function actualizarTotales() {
+    let subtotalGeneral = 0;
+
+    // Recorrer cada fila de la tabla
+    document.querySelectorAll('tbody tr').forEach(fila => {
+        const precio = parseFloat(fila.getAttribute('data-producto-precio'));
+        const inputCantidad = fila.querySelector('.input-cantidad');
+        const cantidad = parseInt(inputCantidad.value) || 0;
+        const subtotalElemento = fila.querySelector('.subtotal');
+        const stockInfo = fila.querySelector('.stock-info');
+        const stockMaximo = parseInt(stockInfo.getAttribute('data-stock'));
+
+        // Calcular subtotal de la fila
+        const subtotalFila = precio * cantidad;
+        subtotalElemento.textContent = `S/ ${subtotalFila.toFixed(2)}`;
+        
+        // Actualizar información de stock disponible
+        const restantes = stockMaximo - cantidad;
+        stockInfo.textContent = `Disponible: ${restantes}`;
+        
+        // Cambiar color si quedan pocas unidades
+        if (restantes <= 3) {
+            stockInfo.className = 'stock-info text-danger small';
+        } else if (restantes <= 10) {
+            stockInfo.className = 'stock-info text-warning small';
+        } else {
+            stockInfo.className = 'stock-info text-muted small';
+        }
+
+        // Acumular para el subtotal general
+        subtotalGeneral += subtotalFila;
+    });
+}
+
+// Evento cuando cambia la cantidad en cualquier input
+document.querySelectorAll('.input-cantidad').forEach(input => {
+    input.addEventListener('change', function() {
+        const maxStock = parseInt(this.getAttribute('max'));
+        const cantidad = parseInt(this.value) || 0;
+
+        // Validar que la cantidad esté dentro del stock
+        if (cantidad < 1) {
+            this.value = 1;
+        } else if (cantidad > maxStock) {
+            this.value = maxStock;
+            alert(`Solo hay ${maxStock} unidades disponibles`);
+        }
+
+        // Actualizar los totales en tiempo real
+        actualizarTotales();
+    });
+
+    input.addEventListener('input', function() {
+        // Actualizar en tiempo real mientras el usuario escribe
+        actualizarTotales();
+    });
+});
+
+// Inicializar los totales al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarTotales();
+});
+
+// Función para vaciar el carrito
+function vaciarCarrito() {
+    if (confirm('¿Estás seguro de vaciar todo el carrito?')) {
+        document.getElementById('form-vaciar-carrito').submit();
+    }
+}
+</script>
+
+{{-- Formulario oculto para vaciar carrito --}}
+<form method="POST" action="{{ route('carrito.vaciar') }}" id="form-vaciar-carrito" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
 @endsection

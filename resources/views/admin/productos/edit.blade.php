@@ -4,6 +4,33 @@
 @section('page-title', 'Editar Producto: ' . $producto->nombre)
 
 @section('content')
+<!-- Notificaciones -->
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show">
+        <i class="fa fa-check-circle"></i> {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fa fa-exclamation-triangle"></i> {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+@if($errors->any())
+    <div class="alert alert-danger alert-dismissible fade show">
+        <i class="fa fa-exclamation-triangle"></i> Por favor corrige los siguientes errores:
+        <ul class="mb-0">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Editar Producto: <span class="text-success">{{ $producto->nombre }}</span></h2>
     <a href="{{ route('admin.productos.index') }}" class="btn btn-outline-secondary">
@@ -20,7 +47,7 @@
                 </h6>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('admin.productos.update', $producto->id) }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('admin.productos.update', $producto->id) }}" enctype="multipart/form-data" id="form-editar-producto">
                     @csrf
                     @method('PUT')
                     
@@ -123,7 +150,8 @@
                                 <select class="form-select @error('vendedor_id') is-invalid @enderror" id="vendedor_id" name="vendedor_id">
                                     <option value="">Administrador (Sin vendedor)</option>
                                     @foreach($vendedores as $vendedor)
-                                        <option value="{{ $vendedor->id }}" {{ old('vendedor_id', $producto->vendedor_id) == $vendedor->id ? 'selected' : '' }}>
+                                        <option value="{{ $vendedor->id }}" 
+                                            {{ old('vendedor_id', $producto->vendedor_id) == $vendedor->id ? 'selected' : '' }}>
                                             {{ $vendedor->nombre }}
                                         </option>
                                     @endforeach
@@ -140,7 +168,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Estado del Producto</label>
                                 <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" id="activo" name="activo" 
+                                    <input class="form-check-input" type="checkbox" id="activo" name="activo" value="1"
                                            {{ old('activo', $producto->activo) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="activo">Producto activo</label>
                                 </div>
@@ -150,7 +178,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Aprobación</label>
                                 <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" id="aprobado" name="aprobado" 
+                                    <input class="form-check-input" type="checkbox" id="aprobado" name="aprobado" value="1"
                                            {{ old('aprobado', $producto->aprobado) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="aprobado">Producto aprobado</label>
                                 </div>
@@ -225,7 +253,7 @@
             </div>
         </div>
 
-        <!-- Nueva Imagen -->
+        <!--Cambiar Imagen-->
         <div class="card shadow mt-4">
             <div class="card-header bg-warning text-dark">
                 <h6 class="m-0 font-weight-bold">
@@ -236,18 +264,20 @@
                 <div class="mb-3">
                     <label for="imagen" class="form-label">Seleccionar Nueva Imagen</label>
                     <input type="file" class="form-control @error('imagen') is-invalid @enderror" 
-                           id="imagen" name="imagen" accept="image/*">
+                        id="imagen" name="imagen" 
+                        accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.tiff" 
+                        onchange="validarImagen(this)">
                     @error('imagen')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                     <div class="form-text">
-                        Deja en blanco para mantener la imagen actual. Formatos: JPG, PNG, GIF, WEBP. Máx 2MB.
+                        Formatos permitidos: JPG, JPEG, PNG, GIF, WEBP, SVG, BMP, TIFF. Tamaño máximo: 2MB.
                     </div>
                 </div>
                 
                 <div class="text-center">
                     <img id="preview" src="#" alt="Vista previa de la nueva imagen" 
-                         class="img-thumbnail mb-3" style="max-width: 100%; display: none;">
+                        class="img-thumbnail mb-3" style="max-width: 100%; max-height: 200px; display: none;">
                     <p class="text-muted small" id="preview-text">
                         La nueva imagen seleccionada aparecerá aquí
                     </p>
@@ -259,6 +289,57 @@
 
 @push('scripts')
 <script>
+    // Función para validar la imagen antes de subir
+    function validarImagen(input) {
+        const file = input.files[0];
+        const preview = document.getElementById('preview');
+        const previewText = document.getElementById('preview-text');
+        const form = document.getElementById('form-editar-producto');
+        const submitButton = form.querySelector('button[type="submit"]');
+        
+        // Resetear estados
+        input.classList.remove('is-invalid');
+        preview.style.display = 'none';
+        previewText.style.display = 'block';
+        submitButton.disabled = false;
+        
+        if (!file) return;
+        
+        // Validar tipo de archivo
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'];
+        if (!allowedTypes.includes(file.type)) {
+            input.classList.add('is-invalid');
+            showError('Formato de imagen no permitido. Use JPG, PNG, GIF, WEBP, SVG, BMP o TIFF.');
+            submitButton.disabled = true;
+            return;
+        }
+        
+        // Validar tamaño (2MB = 2 * 1024 * 1024 bytes)
+        const maxSize = 2 * 1024 * 1024;
+        if (file.size > maxSize) {
+            input.classList.add('is-invalid');
+            showError('La imagen es demasiado grande. Máximo 2MB permitido.');
+            submitButton.disabled = true;
+            return;
+        }
+        
+        // Mostrar vista previa
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            previewText.style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+    }
+
+    // Función para mostrar errores
+    function showError(message) {
+        // Puedes mostrar un alert o actualizar un elemento de error específico
+        alert(message);
+    }
+
+    // Vista previa de imagen (código existente)
     document.getElementById('imagen').addEventListener('change', function(e) {
         const preview = document.getElementById('preview');
         const previewText = document.getElementById('preview-text');
@@ -275,6 +356,30 @@
         } else {
             preview.style.display = 'none';
             previewText.style.display = 'block';
+        }
+    });
+
+    // Validación del formulario antes de enviar
+    document.getElementById('form-editar-producto').addEventListener('submit', function(e) {
+        const imagenInput = document.getElementById('imagen');
+        const file = imagenInput.files[0];
+        
+        if (file) {
+            // Validar tipo de archivo
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'];
+            if (!allowedTypes.includes(file.type)) {
+                e.preventDefault();
+                alert('Formato de imagen no permitido. Use JPG, PNG, GIF, WEBP, SVG, BMP o TIFF.');
+                return;
+            }
+            
+            // Validar tamaño
+            const maxSize = 2 * 1024 * 1024;
+            if (file.size > maxSize) {
+                e.preventDefault();
+                alert('La imagen es demasiado grande. Máximo 2MB permitido.');
+                return;
+            }
         }
     });
 </script>

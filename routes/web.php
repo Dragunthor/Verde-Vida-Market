@@ -12,10 +12,8 @@ use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ProductoController as AdminProductoController;
 use App\Http\Controllers\Admin\ClienteController;
 
-// Página principal
+// Rutas públicas
 Route::get('/', [HomeController::class, 'index'])->name('home');
-
-// Autenticación
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
@@ -30,6 +28,12 @@ Route::get('/productos/{id}', [ProductoController::class, 'show'])->name('produc
 Route::get('/vendedores', [VendedorController::class, 'index'])->name('vendedores.index');
 Route::get('/vendedores/{id}', [VendedorController::class, 'show'])->name('vendedores.show');
 
+// Carrito (accesible sin autenticación)
+Route::get('/carrito', [CarritoController::class, 'index'])->name('carrito.index');
+Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])->name('carrito.agregar');
+Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
+Route::delete('/carrito/vaciar', [CarritoController::class, 'vaciar'])->name('carrito.vaciar');
+
 // Rutas protegidas
 Route::middleware(['auth'])->group(function () {
     // Perfil
@@ -37,13 +41,9 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
 
     // Carrito
-    Route::get('/carrito', [CarritoController::class, 'index'])->name('carrito.index');
-    Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])->name('carrito.agregar');
     Route::put('/carrito/actualizar/{id}', [CarritoController::class, 'actualizar'])->name('carrito.actualizar');
     Route::post('/carrito/actualizar-todo', [CarritoController::class, 'actualizarTodo'])->name('carrito.actualizar-todo');
-    Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
-    Route::delete('/carrito/vaciar', [CarritoController::class, 'vaciar'])->name('carrito.vaciar');
-
+ 
     // Pedidos
     Route::get('/pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
     Route::get('/pedidos/{id}', [PedidoController::class, 'show'])->name('pedidos.show');

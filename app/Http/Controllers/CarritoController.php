@@ -12,12 +12,10 @@ class CarritoController extends Controller
     public function index()
     {
         if (Auth::check()) {
-            // Usuario autenticado - carrito por usuario
             $carrito = CarritoTemporal::with('producto.vendedor.perfilVendedor')
                 ->where('usuario_id', Auth::id())
                 ->get();
         } else {
-            // Usuario no autenticado - carrito por sesión
             $carrito = CarritoTemporal::with('producto.vendedor.perfilVendedor')
                 ->where('sesion_id', session()->getId())
                 ->get();
@@ -75,7 +73,7 @@ class CarritoController extends Controller
             ]);
         }
 
-        return redirect()->route('carrito.index')->with('success', 'Producto agregado al carrito.');
+        return back()->with('success', 'Producto agregado al carrito.');
     }
 
     public function actualizar(Request $request, $id)

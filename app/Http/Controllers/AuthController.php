@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Usuario;
+use App\Models\CarritoTemporal;
 
 class AuthController extends Controller
 {
@@ -73,6 +74,11 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        if (auth()->check()) {
+            CarritoTemporal::where('usuario_id', auth()->id())->delete();
+        } else {
+            CarritoTemporal::where('sesion_id', session()->getId())->delete();
+        }
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

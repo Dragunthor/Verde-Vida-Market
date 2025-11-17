@@ -11,12 +11,19 @@ use Illuminate\Support\Facades\Storage;
 
 class ProductoController extends Controller
 {
+    // Verificación interna para admin
+    private function verificarAdmin()
+    {
+        if (!auth()->user()->esAdmin()) {
+            return redirect('/')->with('error', 'Acceso no autorizado. Debes ser administrador.');
+        }
+        return null;
+    }
+
     public function index(Request $request)
     {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
         $query = Producto::with(['categoria', 'vendedor']);
 
@@ -47,23 +54,17 @@ class ProductoController extends Controller
         $categorias = Categoria::all();
         $vendedores = Usuario::where('rol', 'vendedor')->get();
 
-        // Contador de productos pendientes para el sidebar
-        $productosPendientesCount = Producto::where('aprobado', false)->count();
-
         return view('admin.productos.index', compact(
             'productos', 
             'categorias', 
-            'vendedores',
-            'productosPendientesCount'
+            'vendedores'
         ));
     }
 
     public function create()
     {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
         $categorias = Categoria::all();
         $vendedores = Usuario::where('rol', 'vendedor')->get();
@@ -71,57 +72,10 @@ class ProductoController extends Controller
         return view('admin.productos.create', compact('categorias', 'vendedores'));
     }
 
-    public function store(Request $request)
-    {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
-
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'required|string',
-            'precio' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'unidad' => 'required|string|max:50',
-            'origen' => 'required|string|max:100',
-            'categoria_id' => 'required|exists:categorias,id',
-            'vendedor_id' => 'nullable|exists:usuarios,id',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'activo' => 'boolean',
-            'aprobado' => 'boolean'
-        ]);
-
-        $productoData = $request->only([
-            'nombre', 'descripcion', 'precio', 'stock', 'unidad', 'origen', 
-            'categoria_id', 'vendedor_id'
-        ]);
-
-        // Convertir checkboxes a boolean
-        $productoData['activo'] = $request->has('activo');
-        $productoData['aprobado'] = $request->has('aprobado');
-
-        // Si no se asigna vendedor, es del administrador
-        if (!$request->vendedor_id) {
-            $productoData['vendedor_id'] = null;
-        }
-
-        if ($request->hasFile('imagen')) {
-            $productoData['imagen'] = $request->file('imagen')->store('productos', 'public');
-        }
-
-        Producto::create($productoData);
-
-        return redirect()->route('admin.productos.index')
-            ->with('success', 'Producto creado exitosamente.');
-    }
-
     public function edit($id)
     {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
         $producto = Producto::findOrFail($id);
         $categorias = Categoria::all();
@@ -130,63 +84,148 @@ class ProductoController extends Controller
         return view('admin.productos.edit', compact('producto', 'categorias', 'vendedores'));
     }
 
-    public function update(Request $request, $id)
+    public function store(Request $request)
     {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
-
-        $producto = Producto::findOrFail($id);
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
         $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'required|string',
             'precio' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'unidad' => 'required|string|max:50',
-            'origen' => 'required|string|max:100',
+            'unidad' => 'required|string',
+            'origen' => 'required|string|max:255',
             'categoria_id' => 'required|exists:categorias,id',
-            'vendedor_id' => 'nullable|exists:usuarios,id',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'activo' => 'boolean',
-            'aprobado' => 'boolean'
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg,bmp,tiff|max:2048'
         ]);
 
-        $productoData = $request->only([
-            'nombre', 'descripcion', 'precio', 'stock', 'unidad', 'origen', 
-            'categoria_id', 'vendedor_id'
+        $data = $request->only([
+            'nombre', 'descripcion', 'precio', 'stock', 'unidad', 
+            'origen', 'categoria_id'
         ]);
 
-        // Convertir checkboxes a boolean
-        $productoData['activo'] = $request->has('activo');
-        $productoData['aprobado'] = $request->has('aprobado');
+        // Usar el ID del admin como vendedor por defecto
+        $data['vendedor_id'] = auth()->id();
 
-        // Si no se asigna vendedor, es del administrador
-        if (!$request->vendedor_id) {
-            $productoData['vendedor_id'] = null;
-        }
+        // Campos booleanos
+        $data['activo'] = $request->has('activo');
+        $data['aprobado'] = $request->has('aprobado');
 
+        // Imagen
         if ($request->hasFile('imagen')) {
-            // Eliminar imagen anterior si existe
-            if ($producto->imagen) {
-                Storage::disk('public')->delete($producto->imagen);
-            }
-            $productoData['imagen'] = $request->file('imagen')->store('productos', 'public');
+            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
         }
 
-        $producto->update($productoData);
+        $producto = Producto::create($data);
 
         return redirect()->route('admin.productos.index')
-            ->with('success', 'Producto actualizado exitosamente.');
+            ->with('success', 'Producto creado correctamente.');
     }
+
+    public function update(Request $request, $id)
+{
+    $verificacion = $this->verificarAdmin();
+    if ($verificacion) return $verificacion;
+
+    $producto = Producto::findOrFail($id);
+
+    \Log::info('=== INICIANDO ACTUALIZACIÓN DE PRODUCTO ===');
+    \Log::info('Producto ID: ' . $id);
+    \Log::info('Datos del request:', $request->all());
+    \Log::info('¿Tiene archivo imagen?: ' . ($request->hasFile('imagen') ? 'Sí' : 'No'));
+
+    $request->validate([
+        'nombre' => 'required|string|max:255',
+        'descripcion' => 'required|string',
+        'precio' => 'required|numeric|min:0',
+        'stock' => 'required|integer|min:0',
+        'unidad' => 'required|string',
+        'origen' => 'required|string|max:255',
+        'categoria_id' => 'required|exists:categorias,id',
+        'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg,bmp,tiff|max:2048'
+    ]);
+
+    // Preparar datos
+    $data = $request->only([
+        'nombre', 'descripcion', 'precio', 'stock', 'unidad', 
+        'origen', 'categoria_id'
+    ]);
+
+    // Usar el ID del admin como vendedor por defecto
+    $data['vendedor_id'] = auth()->id();
+
+    // Manejar campos booleanos
+    $data['activo'] = $request->has('activo');
+    $data['aprobado'] = $request->has('aprobado');
+
+    \Log::info('Datos preparados antes de imagen:', $data);
+
+    // Reemplaza solo la sección de manejo de imagen con esto:
+if ($request->hasFile('imagen')) {
+    error_log('=== PROCESANDO IMAGEN CON MÉTODO ALTERNATIVO ===');
+    
+    $imagen = $request->file('imagen');
+    
+    // Crear nombre único
+    $nombreArchivo = 'producto_' . time() . '_' . uniqid() . '.' . $imagen->getClientOriginalExtension();
+    error_log('Nombre archivo: ' . $nombreArchivo);
+    
+    // Ruta completa
+    $rutaDestino = storage_path('app/public/productos/' . $nombreArchivo);
+    error_log('Ruta destino: ' . $rutaDestino);
+    
+    // Mover el archivo manualmente
+    try {
+        // Asegurar que el directorio existe
+        if (!is_dir(storage_path('app/public/productos'))) {
+            mkdir(storage_path('app/public/productos'), 0755, true);
+        }
+        
+        // Mover el archivo
+        $movido = $imagen->move(storage_path('app/public/productos'), $nombreArchivo);
+        
+        if ($movido) {
+            $data['imagen'] = 'productos/' . $nombreArchivo;
+            error_log('Imagen movida exitosamente: ' . $data['imagen']);
+            
+            // Verificar que el archivo existe
+            $existe = file_exists($rutaDestino) ? 'SÍ' : 'NO';
+            error_log('¿Archivo existe después de mover?: ' . $existe);
+        } else {
+            error_log('ERROR: No se pudo mover el archivo');
+        }
+        
+    } catch (\Exception $e) {
+        error_log('EXCEPCIÓN al mover imagen: ' . $e->getMessage());
+    }
+}
+
+    \Log::info('Datos finales para actualizar:', $data);
+
+    // Actualizar el producto
+    try {
+        $updated = $producto->update($data);
+        \Log::info('¿Actualización exitosa?: ' . ($updated ? 'Sí' : 'No'));
+        
+        // Recargar el producto para ver los cambios
+        $producto->refresh();
+        \Log::info('Producto después de actualizar - Imagen: ' . $producto->imagen);
+        
+    } catch (\Exception $e) {
+        \Log::error('Error al actualizar producto: ' . $e->getMessage());
+    }
+
+    \Log::info('=== FINALIZANDO ACTUALIZACIÓN ===');
+
+    return redirect()->route('admin.productos.edit', $producto->id)
+        ->with('success', 'Producto actualizado correctamente.');
+}
 
     public function destroy($id)
     {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
         $producto = Producto::findOrFail($id);
 
@@ -203,10 +242,8 @@ class ProductoController extends Controller
 
     public function aprobar($id)
     {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
         $producto = Producto::findOrFail($id);
         $producto->update(['aprobado' => true]);
@@ -217,10 +254,8 @@ class ProductoController extends Controller
 
     public function pendientes()
     {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
         $productos = Producto::with(['categoria', 'vendedor'])
             ->where('aprobado', false)
@@ -230,22 +265,17 @@ class ProductoController extends Controller
         $categorias = Categoria::all();
         $vendedores = Usuario::where('rol', 'vendedor')->get();
 
-        $productosPendientesCount = Producto::where('aprobado', false)->count();
-
         return view('admin.productos.index', compact(
             'productos', 
             'categorias', 
-            'vendedores',
-            'productosPendientesCount'
+            'vendedores'
         ));
     }
 
     public function toggleActivo($id)
     {
-        // Verificar que el usuario es admin
-        if (!auth()->user()->esAdmin()) {
-            return redirect('/')->with('error', 'Acceso no autorizado.');
-        }
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
         $producto = Producto::findOrFail($id);
         $producto->update(['activo' => !$producto->activo]);
