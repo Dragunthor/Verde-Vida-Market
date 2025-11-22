@@ -150,8 +150,7 @@
                                 <select class="form-select @error('vendedor_id') is-invalid @enderror" id="vendedor_id" name="vendedor_id">
                                     <option value="">Administrador (Sin vendedor)</option>
                                     @foreach($vendedores as $vendedor)
-                                        <option value="{{ $vendedor->id }}" 
-                                            {{ old('vendedor_id', $producto->vendedor_id) == $vendedor->id ? 'selected' : '' }}>
+                                        <option value="{{ $vendedor->id }}" {{ old('vendedor_id', $producto->vendedor_id) == $vendedor->id ? 'selected' : '' }}>
                                             {{ $vendedor->nombre }}
                                         </option>
                                     @endforeach
@@ -160,6 +159,31 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DE IMAGEN DENTRO DEL FORMULARIO -->
+                    <div class="mb-3">
+                        <label for="imagen" class="form-label">Cambiar Imagen</label>
+                        <input type="file" class="form-control @error('imagen') is-invalid @enderror" 
+                               id="imagen" name="imagen" 
+                               accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.tiff" 
+                               onchange="validarImagen(this)">
+                        @error('imagen')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text">
+                            Formatos permitidos: JPG, JPEG, PNG, GIF, WEBP, SVG, BMP, TIFF. Tamaño máximo: 2MB.
+                            Deja en blanco para mantener la imagen actual.
+                        </div>
+                        
+                        <!-- Vista previa de imagen -->
+                        <div class="text-center mt-3">
+                            <img id="preview" src="#" alt="Vista previa de la nueva imagen" 
+                                 class="img-thumbnail mb-2" style="max-width: 100%; max-height: 200px; display: none;">
+                            <p class="text-muted small" id="preview-text">
+                                Vista previa de la nueva imagen aparecerá aquí
+                            </p>
                         </div>
                     </div>
 
@@ -252,78 +276,59 @@
                 </div>
             </div>
         </div>
-
-        <!--Cambiar Imagen-->
-        <div class="card shadow mt-4">
-            <div class="card-header bg-warning text-dark">
-                <h6 class="m-0 font-weight-bold">
-                    <i class="fa fa-upload"></i> Cambiar Imagen
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="imagen" class="form-label">Seleccionar Nueva Imagen</label>
-                    <input type="file" class="form-control @error('imagen') is-invalid @enderror" 
-                        id="imagen" name="imagen" 
-                        accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.tiff" 
-                        onchange="validarImagen(this)">
-                    @error('imagen')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    <div class="form-text">
-                        Formatos permitidos: JPG, JPEG, PNG, GIF, WEBP, SVG, BMP, TIFF. Tamaño máximo: 2MB.
-                    </div>
-                </div>
-                
-                <div class="text-center">
-                    <img id="preview" src="#" alt="Vista previa de la nueva imagen" 
-                        class="img-thumbnail mb-3" style="max-width: 100%; max-height: 200px; display: none;">
-                    <p class="text-muted small" id="preview-text">
-                        La nueva imagen seleccionada aparecerá aquí
-                    </p>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
 @push('scripts')
 <script>
-    // Función para validar la imagen antes de subir
-    function validarImagen(input) {
-        const file = input.files[0];
-        const preview = document.getElementById('preview');
-        const previewText = document.getElementById('preview-text');
-        const form = document.getElementById('form-editar-producto');
-        const submitButton = form.querySelector('button[type="submit"]');
-        
-        // Resetear estados
-        input.classList.remove('is-invalid');
-        preview.style.display = 'none';
-        previewText.style.display = 'block';
-        submitButton.disabled = false;
-        
-        if (!file) return;
-        
-        // Validar tipo de archivo
-        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'];
-        if (!allowedTypes.includes(file.type)) {
-            input.classList.add('is-invalid');
-            showError('Formato de imagen no permitido. Use JPG, PNG, GIF, WEBP, SVG, BMP o TIFF.');
-            submitButton.disabled = true;
-            return;
-        }
-        
-        // Validar tamaño (2MB = 2 * 1024 * 1024 bytes)
-        const maxSize = 2 * 1024 * 1024;
-        if (file.size > maxSize) {
-            input.classList.add('is-invalid');
-            showError('La imagen es demasiado grande. Máximo 2MB permitido.');
-            submitButton.disabled = true;
-            return;
-        }
-        
-        // Mostrar vista previa
+// Función para validar la imagen antes de subir
+function validarImagen(input) {
+    const file = input.files[0];
+    const preview = document.getElementById('preview');
+    const previewText = document.getElementById('preview-text');
+    
+    // Resetear estados
+    input.classList.remove('is-invalid');
+    preview.style.display = 'none';
+    previewText.style.display = 'block';
+    
+    if (!file) return;
+    
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'];
+    if (!allowedTypes.includes(file.type)) {
+        input.classList.add('is-invalid');
+        alert('Formato de imagen no permitido. Use JPG, PNG, GIF, WEBP, SVG, BMP o TIFF.');
+        input.value = '';
+        return;
+    }
+    
+    // Validar tamaño (2MB = 2 * 1024 * 1024 bytes)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+        input.classList.add('is-invalid');
+        alert('La imagen es demasiado grande. Máximo 2MB permitido.');
+        input.value = '';
+        return;
+    }
+    
+    // Mostrar vista previa
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        previewText.style.display = 'none';
+    }
+    reader.readAsDataURL(file);
+}
+
+// Vista previa de imagen
+document.getElementById('imagen').addEventListener('change', function(e) {
+    const preview = document.getElementById('preview');
+    const previewText = document.getElementById('preview-text');
+    const file = e.target.files[0];
+
+    if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
             preview.src = e.target.result;
@@ -331,57 +336,11 @@
             previewText.style.display = 'none';
         }
         reader.readAsDataURL(file);
+    } else {
+        preview.style.display = 'none';
+        previewText.style.display = 'block';
     }
-
-    // Función para mostrar errores
-    function showError(message) {
-        // Puedes mostrar un alert o actualizar un elemento de error específico
-        alert(message);
-    }
-
-    // Vista previa de imagen (código existente)
-    document.getElementById('imagen').addEventListener('change', function(e) {
-        const preview = document.getElementById('preview');
-        const previewText = document.getElementById('preview-text');
-        const file = e.target.files[0];
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-                previewText.style.display = 'none';
-            }
-            reader.readAsDataURL(file);
-        } else {
-            preview.style.display = 'none';
-            previewText.style.display = 'block';
-        }
-    });
-
-    // Validación del formulario antes de enviar
-    document.getElementById('form-editar-producto').addEventListener('submit', function(e) {
-        const imagenInput = document.getElementById('imagen');
-        const file = imagenInput.files[0];
-        
-        if (file) {
-            // Validar tipo de archivo
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'];
-            if (!allowedTypes.includes(file.type)) {
-                e.preventDefault();
-                alert('Formato de imagen no permitido. Use JPG, PNG, GIF, WEBP, SVG, BMP o TIFF.');
-                return;
-            }
-            
-            // Validar tamaño
-            const maxSize = 2 * 1024 * 1024;
-            if (file.size > maxSize) {
-                e.preventDefault();
-                alert('La imagen es demasiado grande. Máximo 2MB permitido.');
-                return;
-            }
-        }
-    });
+});
 </script>
 @endpush
 @endsection

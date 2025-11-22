@@ -124,103 +124,54 @@ class ProductoController extends Controller
     }
 
     public function update(Request $request, $id)
-{
-    $verificacion = $this->verificarAdmin();
-    if ($verificacion) return $verificacion;
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
 
-    $producto = Producto::findOrFail($id);
+        $producto = Producto::findOrFail($id);
 
-    \Log::info('=== INICIANDO ACTUALIZACIÓN DE PRODUCTO ===');
-    \Log::info('Producto ID: ' . $id);
-    \Log::info('Datos del request:', $request->all());
-    \Log::info('¿Tiene archivo imagen?: ' . ($request->hasFile('imagen') ? 'Sí' : 'No'));
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'required|string',
+            'precio' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'unidad' => 'required|string',
+            'origen' => 'required|string|max:255',
+            'categoria_id' => 'required|exists:categorias,id',
+            'vendedor_id' => 'nullable|exists:usuarios,id',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg,bmp,tiff|max:2048'
+        ]);
 
-    $request->validate([
-        'nombre' => 'required|string|max:255',
-        'descripcion' => 'required|string',
-        'precio' => 'required|numeric|min:0',
-        'stock' => 'required|integer|min:0',
-        'unidad' => 'required|string',
-        'origen' => 'required|string|max:255',
-        'categoria_id' => 'required|exists:categorias,id',
-        'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg,bmp,tiff|max:2048'
-    ]);
+        $data = $request->only([
+            'nombre', 'descripcion', 'precio', 'stock', 'unidad', 
+            'origen', 'categoria_id', 'vendedor_id'
+        ]);
 
-    // Preparar datos
-    $data = $request->only([
-        'nombre', 'descripcion', 'precio', 'stock', 'unidad', 
-        'origen', 'categoria_id'
-    ]);
+        // Manejar campos booleanos
+        $data['activo'] = $request->has('activo');
+        $data['aprobado'] = $request->has('aprobado');
 
-    // Usar el ID del admin como vendedor por defecto
-    $data['vendedor_id'] = auth()->id();
-
-    // Manejar campos booleanos
-    $data['activo'] = $request->has('activo');
-    $data['aprobado'] = $request->has('aprobado');
-
-    \Log::info('Datos preparados antes de imagen:', $data);
-
-    // Reemplaza solo la sección de manejo de imagen con esto:
-if ($request->hasFile('imagen')) {
-    error_log('=== PROCESANDO IMAGEN CON MÉTODO ALTERNATIVO ===');
-    
-    $imagen = $request->file('imagen');
-    
-    // Crear nombre único
-    $nombreArchivo = 'producto_' . time() . '_' . uniqid() . '.' . $imagen->getClientOriginalExtension();
-    error_log('Nombre archivo: ' . $nombreArchivo);
-    
-    // Ruta completa
-    $rutaDestino = storage_path('app/public/productos/' . $nombreArchivo);
-    error_log('Ruta destino: ' . $rutaDestino);
-    
-    // Mover el archivo manualmente
-    try {
-        // Asegurar que el directorio existe
-        if (!is_dir(storage_path('app/public/productos'))) {
-            mkdir(storage_path('app/public/productos'), 0755, true);
+        // Manejar vendedor_id - si es vacío, usar null
+        if (empty($data['vendedor_id'])) {
+            $data['vendedor_id'] = auth()->id();
         }
-        
-        // Mover el archivo
-        $movido = $imagen->move(storage_path('app/public/productos'), $nombreArchivo);
-        
-        if ($movido) {
-            $data['imagen'] = 'productos/' . $nombreArchivo;
-            error_log('Imagen movida exitosamente: ' . $data['imagen']);
+
+        // Manejar la imagen
+        if ($request->hasFile('imagen')) {
+            // Eliminar la imagen anterior si existe
+            if ($producto->imagen) {
+                Storage::disk('public')->delete($producto->imagen);
+            }
             
-            // Verificar que el archivo existe
-            $existe = file_exists($rutaDestino) ? 'SÍ' : 'NO';
-            error_log('¿Archivo existe después de mover?: ' . $existe);
-        } else {
-            error_log('ERROR: No se pudo mover el archivo');
+            // Guardar la nueva imagen
+            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
         }
-        
-    } catch (\Exception $e) {
-        error_log('EXCEPCIÓN al mover imagen: ' . $e->getMessage());
+
+        $producto->update($data);
+
+        return redirect()->route('admin.productos.edit', $producto->id)
+            ->with('success', 'Producto actualizado correctamente.');
     }
-}
-
-    \Log::info('Datos finales para actualizar:', $data);
-
-    // Actualizar el producto
-    try {
-        $updated = $producto->update($data);
-        \Log::info('¿Actualización exitosa?: ' . ($updated ? 'Sí' : 'No'));
-        
-        // Recargar el producto para ver los cambios
-        $producto->refresh();
-        \Log::info('Producto después de actualizar - Imagen: ' . $producto->imagen);
-        
-    } catch (\Exception $e) {
-        \Log::error('Error al actualizar producto: ' . $e->getMessage());
-    }
-
-    \Log::info('=== FINALIZANDO ACTUALIZACIÓN ===');
-
-    return redirect()->route('admin.productos.edit', $producto->id)
-        ->with('success', 'Producto actualizado correctamente.');
-}
 
     public function destroy($id)
     {

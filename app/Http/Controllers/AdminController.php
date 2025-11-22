@@ -289,4 +289,42 @@ class AdminController extends Controller
 
         return view('admin.configuracion.index');
     }
+    // Métodos para Pedidos
+    public function pedidos()
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $pedidos = Pedido::with('usuario')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return view('admin.pedidos.index', compact('pedidos'));
+    }
+
+    public function mostrarPedido($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $pedido = Pedido::with(['usuario', 'detalles.producto.vendedor'])->findOrFail($id);
+        
+        return view('admin.pedidos.show', compact('pedido'));
+    }
+
+    public function actualizarPedido(Request $request, $id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $request->validate([
+            'estado' => 'required|in:pendiente,confirmado,preparando,listo,entregado,cancelado'
+        ]);
+
+        $pedido = Pedido::findOrFail($id);
+        $pedido->update(['estado' => $request->estado]);
+
+        return redirect()->route('admin.pedidos.show', $pedido->id)
+            ->with('success', 'Estado del pedido actualizado correctamente.');
+    }
 }

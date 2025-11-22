@@ -11,31 +11,16 @@ class CategoriasSeeder extends Seeder
     public function run()
     {
         $categorias = [
-            [
-                'nombre' => 'Frutas Orgánicas',
-                'descripcion' => 'Frutas frescas cultivadas sin pesticidas ni químicos, 100% naturales y llenas de sabor.',
-                'imagen' => 'categorias/frutas-organicas.jpg'
-            ],
-            [
-                'nombre' => 'Lácteos Naturales',
-                'descripcion' => 'Productos lácteos de animales criados en libertad, sin hormonas ni antibióticos.',
-                'imagen' => 'categorias/lacteos-naturales.jpg'
-            ],
-            [
-                'nombre' => 'Verduras Ecológicas',
-                'descripcion' => 'Verduras cultivadas de manera sostenible, ricas en nutrientes y sabor auténtico.',
-                'imagen' => 'categorias/verduras-ecologicas.jpg'
-            ],
-            [
-                'nombre' => 'Granos y Cereales',
-                'descripcion' => 'Granos integrales y cereales orgánicos, base de una alimentación saludable.',
-                'imagen' => 'categorias/granos-cereales.jpg'
-            ],
-            [
-                'nombre' => 'Hierbas y Especias',
-                'descripcion' => 'Hierbas aromáticas y especias cultivadas naturalmente para realzar tus comidas.',
-                'imagen' => 'categorias/hierbas-especias.jpg'
-            ]
+            ['nombre' => 'Frutas Frescas', 'descripcion' => 'Frutas de temporada recién cosechadas'],
+            ['nombre' => 'Verduras Orgánicas', 'descripcion' => 'Verduras cultivadas sin pesticidas'],
+            ['nombre' => 'Lácteos y Huevos', 'descripcion' => 'Productos lácteos y huevos frescos'],
+            ['nombre' => 'Panadería y Granos', 'descripcion' => 'Panes artesanales y granos enteros'],
+            ['nombre' => 'Productos Lácteos Alternativos', 'descripcion' => 'Leches y yogures vegetales'],
+            ['nombre' => 'Especias y Condimentos', 'descripcion' => 'Especias orgánicas y condimentos naturales'],
+            ['nombre' => 'Bebidas Naturales', 'descripcion' => 'Jugos y bebidas 100% naturales'],
+            ['nombre' => 'Snacks Saludables', 'descripcion' => 'Snacks orgánicos y nutritivos'],
+            ['nombre' => 'Carnes y Aves', 'descripcion' => 'Carnes y aves de corral criadas naturalmente'],
+            ['nombre' => 'Productos de Limpieza Ecológicos', 'descripcion' => 'Productos de limpieza biodegradables'],
         ];
 
         foreach ($categorias as $categoria) {
