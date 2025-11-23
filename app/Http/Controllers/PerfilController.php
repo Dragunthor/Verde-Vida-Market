@@ -114,6 +114,34 @@ class PerfilController extends Controller
         return redirect()->back()->with('success', 'Contraseña cambiada correctamente.');
     }
 
+    public function cancelarSolicitud()
+    {
+        $usuario = Auth::user();
+
+        if (!$usuario->esVendedor()) {
+            return redirect()->back()->with('error', 'No tienes una solicitud de vendedor pendiente.');
+        }
+
+        $perfilVendedor = $usuario->perfilVendedor;
+
+        if (!$perfilVendedor) {
+            return redirect()->back()->with('error', 'No tienes perfil de vendedor.');
+        }
+
+        // Solo permitir cancelar si está pendiente
+        if ($perfilVendedor->activo_vendedor) {
+            return redirect()->back()->with('error', 'No puedes cancelar una cuenta de vendedor activa. Usa la opción "Dejar de ser vendedor".');
+        }
+
+        // Eliminar perfil de vendedor
+        $perfilVendedor->delete();
+
+        // Cambiar rol a cliente
+        $usuario->update(['rol' => 'cliente']);
+
+        return redirect()->route('perfil.edit')->with('success', 'Solicitud de vendedor cancelada correctamente.');
+    }
+
     public function dejarVendedor()
     {
         $usuario = Auth::user();

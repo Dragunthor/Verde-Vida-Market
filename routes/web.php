@@ -11,6 +11,7 @@ use App\Http\Controllers\PerfilController;
 use App\Http\Controllers\Admin\CategoriaController;
 use App\Http\Controllers\Admin\ProductoController as AdminProductoController;
 use App\Http\Controllers\Admin\ClienteController;
+use App\Http\Controllers\ResenaController;
 
 // Rutas públicas
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -39,9 +40,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
-    Route::put('/perfil/vendedor', [PerfilController::class, 'updateVendedor'])->name('perfil.update-vendedor'); // NUEVA RUTA
+    Route::put('/perfil/vendedor', [PerfilController::class, 'updateVendedor'])->name('perfil.update-vendedor');
     Route::put('/perfil/cambiar-password', [PerfilController::class, 'cambiarPassword'])->name('perfil.cambiar-password');
     Route::delete('/perfil/dejar-vendedor', [PerfilController::class, 'dejarVendedor'])->name('perfil.dejar-vendedor');
+    Route::delete('/perfil/cancelar-solicitud', [PerfilController::class, 'cancelarSolicitud'])->name('perfil.cancelar-solicitud');
     Route::delete('/perfil', [PerfilController::class, 'destroy'])->name('perfil.destroy');
 
     // Carrito (funcionalidades adicionales para usuarios autenticados)
@@ -56,6 +58,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pedidos/{id}/confirmacion', [PedidoController::class, 'confirmacion'])->name('pedidos.confirmacion');
     Route::put('/pedidos/{id}/cancelar', [PedidoController::class, 'cancelar'])->name('pedidos.cancelar');
 
+    // Rutas de reseñas
+    Route::post('/resenas/producto', [ResenaController::class, 'storeProducto'])->name('resenas.producto.store');
+    Route::post('/resenas/vendedor', [ResenaController::class, 'storeVendedor'])->name('resenas.vendedor.store');
+    Route::get('/resenas/mis-resenas', [ResenaController::class, 'misResenas'])->name('resenas.mis-resenas');
+    
     // Solicitud para ser vendedor
     Route::get('/vendedor/solicitud', [VendedorController::class, 'solicitud'])->name('vendedor.solicitud');
     Route::post('/vendedor/solicitud', [VendedorController::class, 'enviarSolicitud'])->name('vendedor.enviarSolicitud');

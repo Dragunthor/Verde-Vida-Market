@@ -23,6 +23,12 @@
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="vendedor-tab" data-bs-toggle="tab" data-bs-target="#vendedor" type="button" role="tab">
                             <i class="fa fa-store"></i> Información de Vendedor
+                            @php
+                                $perfilVendedor = auth()->user()->perfilVendedor;
+                            @endphp
+                            @if($perfilVendedor && !$perfilVendedor->activo_vendedor)
+                                <span class="badge bg-warning ms-1">Pendiente</span>
+                            @endif
                         </button>
                     </li>
                     @endif
@@ -171,17 +177,15 @@
                                             <label class="form-label">Estado de la Cuenta</label>
                                             <div class="p-2 border rounded bg-light">
                                                 <strong>Estado:</strong> 
-                                                <span class="badge bg-{{ $perfilVendedor->activo_vendedor ? 'success' : 'warning' }}">
-                                                    {{ $perfilVendedor->activo_vendedor ? 'Activo' : 'Pendiente de Aprobación' }}
-                                                </span>
-                                                <br>
-                                                <small class="text-muted">
-                                                    @if($perfilVendedor->activo_vendedor)
-                                                        Tu cuenta de vendedor está activa y tus productos son visibles.
-                                                    @else
-                                                        Tu cuenta está en revisión. Te notificaremos cuando sea aprobada.
-                                                    @endif
-                                                </small>
+                                                @if($perfilVendedor->activo_vendedor)
+                                                    <span class="badge bg-success">Activo</span>
+                                                    <br>
+                                                    <small class="text-muted">Tu cuenta de vendedor está activa y tus productos son visibles.</small>
+                                                @else
+                                                    <span class="badge bg-warning">Pendiente de Aprobación</span>
+                                                    <br>
+                                                    <small class="text-muted">Tu cuenta está en revisión. Te notificaremos cuando sea aprobada.</small>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -225,17 +229,31 @@
                                 </div>
                             </div>
 
-                            <!-- Opción para dejar de ser vendedor -->
+                            <!-- Opciones según el estado del vendedor -->
                             <div class="alert alert-warning mt-4">
-                                <h6><i class="fa fa-exclamation-triangle"></i> Dejar de ser Vendedor</h6>
-                                <p class="mb-3">Si deseas dejar de ser vendedor, puedes solicitar la desactivación de tu cuenta de vendedor.</p>
-                                <form method="POST" action="{{ route('perfil.dejar-vendedor') }}" onsubmit="return confirm('¿Estás seguro de que quieres dejar de ser vendedor? Esta acción no se puede deshacer.')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-warning btn-sm">
-                                        <i class="fa fa-times"></i> Solicitar dejar de ser Vendedor
-                                    </button>
-                                </form>
+                                @if($perfilVendedor->activo_vendedor)
+                                    <!-- Vendedor activo: puede dejar de ser vendedor -->
+                                    <h6><i class="fa fa-exclamation-triangle"></i> Dejar de ser Vendedor</h6>
+                                    <p class="mb-3">Si deseas dejar de ser vendedor, puedes solicitar la desactivación de tu cuenta de vendedor.</p>
+                                    <form method="POST" action="{{ route('perfil.dejar-vendedor') }}" onsubmit="return confirm('¿Estás seguro de que quieres dejar de ser vendedor? Esta acción no se puede deshacer.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-warning btn-sm">
+                                            <i class="fa fa-times"></i> Solicitar dejar de ser Vendedor
+                                        </button>
+                                    </form>
+                                @else
+                                    <!-- Vendedor pendiente: puede cancelar solicitud -->
+                                    <h6><i class="fa fa-clock"></i> Solicitud Pendiente</h6>
+                                    <p class="mb-3">Tu solicitud para ser vendedor está en revisión. Puedes cancelarla si lo deseas.</p>
+                                    <form method="POST" action="{{ route('perfil.cancelar-solicitud') }}" onsubmit="return confirm('¿Estás seguro de que quieres cancelar tu solicitud de vendedor?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fa fa-times"></i> Cancelar Solicitud de Vendedor
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
 
                         @else

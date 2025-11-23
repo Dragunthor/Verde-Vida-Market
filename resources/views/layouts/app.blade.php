@@ -153,12 +153,14 @@
                             </li>
                         @endif
 
+                        @auth
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                                 {{ auth()->user()->nombre }}
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('perfil.edit') }}">Mi Perfil</a></li>
+                                <li><a class="dropdown-item" href="{{ route('resenas.mis-resenas') }}">Mis Reseñas</a></li> <!-- NUEVO -->
                                 @if(!auth()->user()->esVendedor() && !auth()->user()->esAdmin())
                                     <li><a class="dropdown-item" href="{{ route('vendedor.solicitud') }}">Ser Vendedor</a></li>
                                 @endif
@@ -171,6 +173,7 @@
                                 </li>
                             </ul>
                         </li>
+                        @endauth
                     @else
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('login') }}">Iniciar Sesión</a>

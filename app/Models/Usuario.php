@@ -97,4 +97,32 @@ class Usuario extends Authenticatable
     {
         return $this->rol === 'cliente';
     }
+    // En Usuario.php
+    public function puedeCalificarProducto($productoId)
+    {
+        // Verificar si el usuario ha comprado este producto y está entregado
+        return $this->pedidos()
+            ->whereHas('detalles', function($query) use ($productoId) {
+                $query->where('producto_id', $productoId);
+            })
+            ->where('estado', 'entregado')
+            ->exists() 
+            && !$this->resenasProductos()
+                ->where('producto_id', $productoId)
+                ->exists();
+    }
+
+    public function puedeCalificarVendedor($vendedorId)
+    {
+        // Verificar si el usuario ha comprado productos de este vendedor
+        return $this->pedidos()
+            ->whereHas('detalles.producto', function($query) use ($vendedorId) {
+                $query->where('vendedor_id', $vendedorId);
+            })
+            ->where('estado', 'entregado')
+            ->exists()
+            && !$this->resenasVendedores()
+                ->where('vendedor_id', $vendedorId)
+                ->exists();
+    }
 }

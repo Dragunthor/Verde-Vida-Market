@@ -28,6 +28,44 @@ class VendedorController extends Controller
         return null; // Todo está bien
     }
 
+    // VISTAS PÚBLICAS
+    public function index()
+    {
+        // Obtener solo vendedores activos con perfil
+        $vendedores = Usuario::where('rol', 'vendedor')
+            ->whereHas('perfilVendedor', function($query) {
+                $query->where('activo_vendedor', true);
+            })
+            ->with(['perfilVendedor', 'productos' => function($query) {
+                $query->where('activo', true)->where('aprobado', true);
+            }])
+            ->paginate(12);
+
+        return view('vendedores.index', compact('vendedores'));
+    }
+
+    public function show($id)
+    {
+        $vendedor = Usuario::where('rol', 'vendedor')
+            ->whereHas('perfilVendedor', function($query) {
+                $query->where('activo_vendedor', true);
+            })
+            ->with(['perfilVendedor', 'perfilVendedor.resenas' => function($query) {
+                $query->where('aprobado', true);
+            }])
+            ->findOrFail($id);
+
+        // Productos activos y aprobados del vendedor
+        $productos = $vendedor->productos()
+            ->where('activo', true)
+            ->where('aprobado', true)
+            ->with('categoria')
+            ->get();
+
+        return view('vendedores.show', compact('vendedor', 'productos'));
+    }
+
+    // VISTAS PROTEGIDAS (SOLO PARA VENDEDORES)
     public function solicitud()
     {
         // Si ya es vendedor, redirigir al dashboard
@@ -233,6 +271,7 @@ class VendedorController extends Controller
 
         return view('vendedor.pedidos.index', compact('ventas'));
     }
+
     public function ventas()
     {
         $verificacion = $this->verificarVendedorActivo();
