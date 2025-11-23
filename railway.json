@@ -7,7 +7,7 @@
   "deploy": {
     "runtime": "V2",
     "numReplicas": 1,
-    "startCommand": "",
+    "startCommand": "php artisan migrate --force && php artisan db:seed --force && php artisan storage:link || true && /start-container.sh",
     "sleepApplication": false,
     "useLegacyStacker": false,
     "multiRegionConfig": {
@@ -16,7 +16,6 @@
       }
     },
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10,
-    "preDeployCommands": "php artisan migrate:fresh --seed --force\nphp artisan storage:link || true"
+    "restartPolicyMaxRetries": 10
   }
 }
