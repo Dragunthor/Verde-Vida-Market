@@ -7,7 +7,7 @@
   "deploy": {
     "runtime": "V2",
     "numReplicas": 1,
-    "startCommand": "vendor/bin/heroku-php-nginx public",
+    "startCommand": "",
     "sleepApplication": false,
     "useLegacyStacker": false,
     "multiRegionConfig": {
