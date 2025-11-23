@@ -8,6 +8,7 @@ use App\Models\Producto;
 use App\Models\VendedorPerfil;
 use App\Models\Pedido;
 use App\Models\Reporte;
+use App\Models\VentaVendedor;
 use App\Models\ResenaProducto;
 use App\Models\ResenaVendedor;
 
@@ -326,5 +327,102 @@ class AdminController extends Controller
 
         return redirect()->route('admin.pedidos.show', $pedido->id)
             ->with('success', 'Estado del pedido actualizado correctamente.');
+    }
+    public function ventas()
+    {
+        // Verificar que es admin
+        if (!auth()->user()->esAdmin()) {
+            return redirect('/')->with('error', 'Acceso no autorizado.');
+        }
+
+        // Obtener todas las ventas de la plataforma
+        $ventas = VentaVendedor::with(['vendedor', 'pedido.usuario', 'producto'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Obtener ventas personales del admin (vendedor_id = 1)
+        $misVentas = VentaVendedor::where('vendedor_id', auth()->id())
+            ->with(['pedido.usuario', 'producto'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Obtener ventas de otros vendedores (excluyendo al admin)
+        $ventasOtrosVendedores = $ventas->where('vendedor_id', '!=', auth()->id());
+
+        // Estadísticas generales de la plataforma
+        $estadisticas = [
+            'total_ventas' => $ventas->count(),
+            'ventas_pagadas' => $ventas->where('estado_pago', 'pagado')->count(),
+            'ingresos_totales' => $ventas->where('estado_pago', 'pagado')->sum('total_vendedor'),
+            'comisiones_totales' => $ventas->sum(function($venta) {
+                return ($venta->precio_venta * $venta->cantidad * $venta->comision_porcentaje) / 100;
+            })
+        ];
+
+        // Estadísticas personales del admin
+        $misVentasEstadisticas = [
+            'total_ventas' => $misVentas->count(),
+            'ventas_pagadas' => $misVentas->where('estado_pago', 'pagado')->count(),
+            'ingresos_totales' => $misVentas->where('estado_pago', 'pagado')->sum('total_vendedor')
+        ];
+
+        // Ventas agrupadas por vendedor (plataforma)
+        $ventasPorVendedor = $ventas->groupBy('vendedor_id')->map(function($ventasVendedor) {
+            $vendedor = $ventasVendedor->first()->vendedor;
+            $ventasPagadas = $ventasVendedor->where('estado_pago', 'pagado');
+            
+            return (object)[
+                'id' => $vendedor->id,
+                'nombre' => $vendedor->nombre,
+                'total_ventas' => $ventasVendedor->count(),
+                'ventas_pagadas' => $ventasPagadas->count(),
+                'total_ingresos' => $ventasPagadas->sum('total_vendedor'),
+                'comisiones' => $ventasVendedor->sum(function($v) {
+                    return ($v->precio_venta * $v->cantidad * $v->comision_porcentaje) / 100;
+                })
+            ];
+        })->values();
+
+        // Comisiones por mes (solo de otros vendedores)
+        $comisionesPorMes = $ventasOtrosVendedores->groupBy(function($venta) {
+            return $venta->created_at->format('Y-m');
+        })->map(function($ventasMes, $key) {
+            return (object)[
+                'mes' => \Carbon\Carbon::parse($key)->format('m'),
+                'anio' => \Carbon\Carbon::parse($key)->format('Y'),
+                'total_ventas' => $ventasMes->count(),
+                'total_comisiones' => $ventasMes->sum(function($v) {
+                    return ($v->precio_venta * $v->cantidad * $v->comision_porcentaje) / 100;
+                })
+            ];
+        })->values()->sortByDesc(function($item) {
+            return $item->anio . $item->mes;
+        });
+
+        // Ventas personales agrupadas por producto
+        $misVentasPorProducto = $misVentas->groupBy('producto_id')->map(function($ventasProducto) {
+            $producto = $ventasProducto->first()->producto;
+            $ventasPagadasProducto = $ventasProducto->where('estado_pago', 'pagado');
+            
+            return (object)[
+                'id' => $producto->id,
+                'nombre' => $producto->nombre,
+                'unidad' => $producto->unidad,
+                'total_ventas' => $ventasProducto->count(),
+                'ventas_pagadas' => $ventasPagadasProducto->count(),
+                'cantidad_total' => $ventasProducto->sum('cantidad'),
+                'total_ingresos' => $ventasPagadasProducto->sum('total_vendedor')
+            ];
+        })->values();
+
+        return view('admin.ventas.index', compact(
+            'ventas', 
+            'misVentas',
+            'estadisticas', 
+            'misVentasEstadisticas',
+            'ventasPorVendedor', 
+            'misVentasPorProducto',
+            'comisionesPorMes'
+        ));
     }
 }

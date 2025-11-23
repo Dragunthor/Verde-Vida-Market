@@ -34,13 +34,17 @@ Route::post('/carrito/agregar', [CarritoController::class, 'agregar'])->name('ca
 Route::delete('/carrito/eliminar/{id}', [CarritoController::class, 'eliminar'])->name('carrito.eliminar');
 Route::delete('/carrito/vaciar', [CarritoController::class, 'vaciar'])->name('carrito.vaciar');
 
-// Rutas protegidas
+// Rutas protegidas por autenticación
 Route::middleware(['auth'])->group(function () {
-    // Perfil
+
     Route::get('/perfil', [PerfilController::class, 'edit'])->name('perfil.edit');
     Route::put('/perfil', [PerfilController::class, 'update'])->name('perfil.update');
+    Route::put('/perfil/vendedor', [PerfilController::class, 'updateVendedor'])->name('perfil.update-vendedor'); // NUEVA RUTA
+    Route::put('/perfil/cambiar-password', [PerfilController::class, 'cambiarPassword'])->name('perfil.cambiar-password');
+    Route::delete('/perfil/dejar-vendedor', [PerfilController::class, 'dejarVendedor'])->name('perfil.dejar-vendedor');
+    Route::delete('/perfil', [PerfilController::class, 'destroy'])->name('perfil.destroy');
 
-    // Carrito
+    // Carrito (funcionalidades adicionales para usuarios autenticados)
     Route::put('/carrito/actualizar/{id}', [CarritoController::class, 'actualizar'])->name('carrito.actualizar');
     Route::post('/carrito/actualizar-todo', [CarritoController::class, 'actualizarTodo'])->name('carrito.actualizar-todo');
  
@@ -52,12 +56,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/pedidos/{id}/confirmacion', [PedidoController::class, 'confirmacion'])->name('pedidos.confirmacion');
     Route::put('/pedidos/{id}/cancelar', [PedidoController::class, 'cancelar'])->name('pedidos.cancelar');
 
-    // Vendedor
+    // Solicitud para ser vendedor
     Route::get('/vendedor/solicitud', [VendedorController::class, 'solicitud'])->name('vendedor.solicitud');
     Route::post('/vendedor/solicitud', [VendedorController::class, 'enviarSolicitud'])->name('vendedor.enviarSolicitud');
     
-    
-    // Rutas de vendedor (las verificaciones van en el controlador)
+    // Rutas de vendedor (las verificaciones van en el controlador - NO USAR MIDDLEWARE)
     Route::get('/vendedor/dashboard', [VendedorController::class, 'dashboard'])->name('vendedor.dashboard');
     Route::get('/vendedor/productos', [VendedorController::class, 'productos'])->name('vendedor.productos');
     Route::get('/vendedor/productos/crear', [VendedorController::class, 'crearProducto'])->name('vendedor.productos.crear');
@@ -67,7 +70,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendedor/pedidos', [VendedorController::class, 'pedidos'])->name('vendedor.pedidos');
     Route::get('/vendedor/ventas', [VendedorController::class, 'ventas'])->name('vendedor.ventas');
 
-    // Admin - las verificaciones van en el controlador
+    // Rutas de administrador
     Route::prefix('admin')->name('admin.')->group(function () {
         // Dashboard
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
@@ -99,7 +102,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/categorias/{id}', [CategoriaController::class, 'update'])->name('categorias.update');
         Route::delete('/categorias/{id}', [CategoriaController::class, 'destroy'])->name('categorias.destroy');
         
-        // Usuarios
+        // Usuarios/Clientes
         Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
         Route::get('/clientes/{id}', [ClienteController::class, 'show'])->name('clientes.show');
         Route::get('/clientes/{id}/editar', [ClienteController::class, 'edit'])->name('clientes.edit');
@@ -123,6 +126,9 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/resenas/producto/{id}/rechazar', [AdminController::class, 'rechazarResenaProducto'])->name('resenas.producto.rechazar');
         Route::put('/resenas/vendedor/{id}/aprobar', [AdminController::class, 'aprobarResenaVendedor'])->name('resenas.vendedor.aprobar');
         Route::delete('/resenas/vendedor/{id}/rechazar', [AdminController::class, 'rechazarResenaVendedor'])->name('resenas.vendedor.rechazar');
+        
+        // Ventas y Comisiones
+        Route::get('/ventas', [AdminController::class, 'ventas'])->name('ventas');
         
         // Configuración
         Route::get('/configuracion', [AdminController::class, 'configuracion'])->name('configuracion');

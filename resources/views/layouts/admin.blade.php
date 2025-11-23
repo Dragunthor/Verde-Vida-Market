@@ -63,6 +63,44 @@
             box-shadow: 0 2px 4px rgba(0,0,0,.1);
             padding: 15px 0;
         }
+
+        /* Notificaciones flotantes */
+        .notification-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 1050;
+            max-width: 350px;
+        }
+        .notification {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .notification.fade-out {
+            animation: slideOut 0.3s ease-in forwards;
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -124,6 +162,14 @@
                             </a>
                         </li>
 
+                        <!-- NUEVA SECCIÓN: Ventas y Comisiones -->
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.ventas*') ? 'active' : '' }}" 
+                               href="{{ route('admin.ventas') }}">
+                                <i class="fa fa-money"></i> Ventas & Comisiones
+                            </a>
+                        </li>
+
                         <!-- Gestión de Usuarios/Clientes -->
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.usuarios*') ? 'active' : '' }}" 
@@ -137,7 +183,7 @@
                             <a class="nav-link {{ request()->routeIs('admin.reportes*') ? 'active' : '' }}" 
                                href="{{ route('admin.reportes') }}">
                                 <i class="fa fa-flag"></i> Reportes
-                                @if(isset($vendedoresPendientesCount) && $vendedoresPendientesCount > 0)
+                                @if(isset($reportesPendientesCount) && $reportesPendientesCount > 0)
                                     <span class="badge bg-danger">{{ $reportesPendientesCount }}</span>
                                 @endif
                             </a>
@@ -200,29 +246,41 @@
                     </div>
                 </nav>
 
-                <!-- Content -->
-                <div class="px-4 py-4">
+                <!-- Contenedor de notificaciones flotantes -->
+                <div class="notification-container">
                     @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show">
-                            <i class="fa fa-check-circle"></i> {{ session('success') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <div class="notification alert alert-success alert-dismissible fade show" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-check-circle me-2"></i>
+                                <div class="flex-grow-1">{{ session('success') }}</div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
                         </div>
                     @endif
 
                     @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible fade show">
-                            <i class="fa fa-exclamation-triangle"></i> {{ session('error') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <div class="notification alert alert-danger alert-dismissible fade show" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-exclamation-triangle me-2"></i>
+                                <div class="flex-grow-1">{{ session('error') }}</div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
                         </div>
                     @endif
 
                     @if(session('warning'))
-                        <div class="alert alert-warning alert-dismissible fade show">
-                            <i class="fa fa-info-circle"></i> {{ session('warning') }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <div class="notification alert alert-warning alert-dismissible fade show" role="alert">
+                            <div class="d-flex align-items-center">
+                                <i class="fa fa-info-circle me-2"></i>
+                                <div class="flex-grow-1">{{ session('warning') }}</div>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
                         </div>
                     @endif
+                </div>
 
+                <!-- Content -->
+                <div class="px-4 py-4">
                     @yield('content')
                 </div>
             </div>
@@ -230,6 +288,39 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Auto-cerrar notificaciones después de 5 segundos
+        document.addEventListener('DOMContentLoaded', function() {
+            const notifications = document.querySelectorAll('.notification');
+            
+            notifications.forEach(notification => {
+                // Cerrar automáticamente después de 5 segundos
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.classList.add('fade-out');
+                        setTimeout(() => {
+                            if (notification.parentNode) {
+                                notification.remove();
+                            }
+                        }, 300);
+                    }
+                }, 5000);
+                
+                // Cerrar al hacer clic en la X
+                const closeButton = notification.querySelector('.btn-close');
+                if (closeButton) {
+                    closeButton.addEventListener('click', function() {
+                        notification.classList.add('fade-out');
+                        setTimeout(() => {
+                            if (notification.parentNode) {
+                                notification.remove();
+                            }
+                        }, 300);
+                    });
+                }
+            });
+        });
+    </script>
     @stack('scripts')
 </body>
 </html>
