@@ -20,7 +20,7 @@
                 </h6>
             </div>
             <div class="card-body">
-                <form method="POST" action="{{ route('admin.productos.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('admin.productos.store') }}" enctype="multipart/form-data" id="form-crear-producto">
                     @csrf
                     
                     <div class="mb-3">
@@ -139,12 +139,37 @@
                         </div>
                     </div>
 
+                    <!-- SECCIÓN DE IMAGEN DENTRO DEL FORMULARIO -->
+                    <div class="mb-3">
+                        <label for="imagen" class="form-label">Imagen del Producto</label>
+                        <input type="file" class="form-control @error('imagen') is-invalid @enderror" 
+                               id="imagen" name="imagen" 
+                               accept=".jpg,.jpeg,.png,.gif,.webp,.svg,.bmp,.tiff" 
+                               onchange="validarImagen(this)">
+                        @error('imagen')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <div class="form-text">
+                            Formatos permitidos: JPG, JPEG, PNG, GIF, WEBP, SVG, BMP, TIFF. Tamaño máximo: 2MB.
+                            Recomendado: 600x600 px para mejor calidad.
+                        </div>
+                        
+                        <!-- Vista previa de imagen -->
+                        <div class="text-center mt-3">
+                            <img id="preview" src="#" alt="Vista previa de la imagen" 
+                                 class="img-thumbnail mb-2" style="max-width: 100%; max-height: 200px; display: none;">
+                            <p class="text-muted small" id="preview-text">
+                                La imagen seleccionada aparecerá aquí
+                            </p>
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Estado del Producto</label>
                                 <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" id="activo" name="activo" 
+                                    <input class="form-check-input" type="checkbox" id="activo" name="activo" value="1"
                                            {{ old('activo', true) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="activo">Producto activo</label>
                                 </div>
@@ -155,7 +180,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Aprobación</label>
                                 <div class="form-check form-switch mt-2">
-                                    <input class="form-check-input" type="checkbox" id="aprobado" name="aprobado" 
+                                    <input class="form-check-input" type="checkbox" id="aprobado" name="aprobado" value="1"
                                            {{ old('aprobado', true) ? 'checked' : '' }}>
                                     <label class="form-check-label" for="aprobado">Producto aprobado</label>
                                 </div>
@@ -178,39 +203,8 @@
     </div>
 
     <div class="col-lg-4">
-        <!-- Vista Previa de Imagen -->
-        <div class="card shadow">
-            <div class="card-header bg-info text-white">
-                <h6 class="m-0 font-weight-bold">
-                    <i class="fa fa-image"></i> Imagen del Producto
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="imagen" class="form-label">Seleccionar Imagen</label>
-                    <input type="file" class="form-control @error('imagen') is-invalid @enderror" 
-                           id="imagen" name="imagen" accept="image/*">
-                    @error('imagen')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                    <div class="form-text">
-                        Formatos: JPG, PNG, GIF, WEBP. Tamaño máximo: 2MB. 
-                        Recomendado: 600x600 px para mejor calidad.
-                    </div>
-                </div>
-                
-                <div class="text-center">
-                    <img id="preview" src="#" alt="Vista previa" 
-                         class="img-thumbnail mt-3" style="max-width: 100%; display: none;">
-                    <p class="text-muted small" id="preview-text">
-                        La imagen seleccionada aparecerá aquí
-                    </p>
-                </div>
-            </div>
-        </div>
-
         <!-- Información de Ayuda -->
-        <div class="card shadow mt-4">
+        <div class="card shadow">
             <div class="card-header bg-light">
                 <h6 class="m-0 font-weight-bold">
                     <i class="fa fa-info-circle"></i> Consejos
@@ -241,47 +235,101 @@
                 </ul>
             </div>
         </div>
+
+        <!-- Información del Image Service -->
+        <div class="card shadow mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="fa fa-cloud-upload"></i> Servicio de Imágenes
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-2">
+                    Las imágenes se almacenan en nuestro servicio externo especializado:
+                </p>
+                <ul class="list-unstyled small">
+                    <li class="mb-1">
+                        <i class="fa fa-check text-success me-2"></i>
+                        Almacenamiento seguro
+                    </li>
+                    <li class="mb-1">
+                        <i class="fa fa-check text-success me-2"></i>
+                        Redimensionamiento automático
+                    </li>
+                    <li class="mb-1">
+                        <i class="fa fa-check text-success me-2"></i>
+                        Optimización de calidad
+                    </li>
+                    <li class="mb-1">
+                        <i class="fa fa-check text-success me-2"></i>
+                        Entrega rápida por CDN
+                    </li>
+                </ul>
+            </div>
+        </div>
     </div>
 </div>
 
 @push('scripts')
 <script>
-    document.getElementById('imagen').addEventListener('change', function(e) {
-        const preview = document.getElementById('preview');
-        const previewText = document.getElementById('preview-text');
-        const file = e.target.files[0];
-        
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-                previewText.style.display = 'none';
-            }
-            reader.readAsDataURL(file);
-        } else {
-            preview.style.display = 'none';
-            previewText.style.display = 'block';
-        }
-    });
+// Función para validar la imagen antes de subir
+function validarImagen(input) {
+    const file = input.files[0];
+    const preview = document.getElementById('preview');
+    const previewText = document.getElementById('preview-text');
+    
+    // Resetear estados
+    input.classList.remove('is-invalid');
+    preview.style.display = 'none';
+    previewText.style.display = 'block';
+    
+    if (!file) return;
+    
+    // Validar tipo de archivo
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/bmp', 'image/tiff'];
+    if (!allowedTypes.includes(file.type)) {
+        input.classList.add('is-invalid');
+        alert('Formato de imagen no permitido. Use JPG, PNG, GIF, WEBP, SVG, BMP o TIFF.');
+        input.value = '';
+        return;
+    }
+    
+    // Validar tamaño (2MB = 2 * 1024 * 1024 bytes)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+        input.classList.add('is-invalid');
+        alert('La imagen es demasiado grande. Máximo 2MB permitido.');
+        input.value = '';
+        return;
+    }
+    
+    // Mostrar vista previa
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        previewText.style.display = 'none';
+    }
+    reader.readAsDataURL(file);
+}
 
-    // Validación de formulario
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const precio = document.getElementById('precio').value;
-        const stock = document.getElementById('stock').value;
-        
-        if (precio < 0) {
-            e.preventDefault();
-            alert('El precio no puede ser negativo');
-            return;
-        }
-        
-        if (stock < 0) {
-            e.preventDefault();
-            alert('El stock no puede ser negativo');
-            return;
-        }
-    });
+// Validación de formulario
+document.getElementById('form-crear-producto').addEventListener('submit', function(e) {
+    const precio = document.getElementById('precio').value;
+    const stock = document.getElementById('stock').value;
+    
+    if (precio < 0) {
+        e.preventDefault();
+        alert('El precio no puede ser negativo');
+        return;
+    }
+    
+    if (stock < 0) {
+        e.preventDefault();
+        alert('El stock no puede ser negativo');
+        return;
+    }
+});
 </script>
 @endpush
 @endsection

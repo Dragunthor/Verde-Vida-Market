@@ -27,7 +27,7 @@
                                 <tr data-producto-precio="{{ $item->producto->precio }}">
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ $item->producto->imagen ? asset('storage/' . $item->producto->imagen) : asset('images/placeholder.jpg') }}" 
+                                            <img src="{{ $item->producto->imagen_url ?: config('app.placeholder_image') }}" 
                                                  alt="{{ $item->producto->nombre }}" 
                                                  class="img-thumbnail me-3" style="width: 80px; height: 80px; object-fit: cover;">
                                             <div>
@@ -238,6 +238,10 @@ function actualizarTotales() {
         // Acumular para el subtotal general
         subtotalGeneral += subtotalFila;
     });
+
+    // Actualizar el resumen en la tarjeta lateral
+    document.getElementById('resumen-subtotal').textContent = `S/ ${subtotalGeneral.toFixed(2)}`;
+    document.getElementById('resumen-total').textContent = `S/ ${subtotalGeneral.toFixed(2)}`;
 }
 
 // Evento cuando cambia la cantidad en cualquier input

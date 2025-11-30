@@ -15,7 +15,7 @@
                 @foreach($pedido->detalles as $detalle)
                     <div class="row mb-3 pb-3 border-bottom">
                         <div class="col-2">
-                            <img src="{{ $detalle->producto->imagen ? asset('storage/' . $detalle->producto->imagen) : asset('images/placeholder.jpg') }}" 
+                            <img src="{{ $detalle->producto->imagen_url ?: config('app.placeholder_image') }}" 
                                  alt="{{ $detalle->producto->nombre }}" 
                                  class="img-fluid rounded" style="max-height: 60px; object-fit: cover;">
                         </div>

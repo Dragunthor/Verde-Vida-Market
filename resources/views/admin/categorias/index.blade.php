@@ -33,10 +33,10 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($categorias as $categoria)
+                    @foreach($categorias->sortByDesc('productos_count') as $categoria)
                     <tr>
                         <td>
-                            <img src="{{ $categoria->imagen ? asset('storage/' . $categoria->imagen) : asset('images/placeholder-category.jpg') }}" 
+                            <img src="{{ $categoria->imagen_url ?: config('app.placeholder_image') }}" 
                                  alt="{{ $categoria->nombre }}" 
                                  class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
                         </td>
@@ -51,7 +51,9 @@
                             @endif
                         </td>
                         <td>
-                            <span class="badge bg-primary">{{ $categoria->productos_count }} productos</span>
+                            <span class="badge bg-{{ $categoria->productos_count > 0 ? 'primary' : 'secondary' }}">
+                                {{ $categoria->productos_count }} productos
+                            </span>
                         </td>
                         <td>{{ $categoria->created_at->format('d/m/Y') }}</td>
                         <td>

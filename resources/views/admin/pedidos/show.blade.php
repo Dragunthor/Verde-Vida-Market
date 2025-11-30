@@ -35,11 +35,9 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        @if($detalle->producto->imagen)
-                                            <img src="{{ asset('storage/' . $detalle->producto->imagen) }}" 
-                                                 alt="{{ $detalle->producto->nombre }}" 
-                                                 class="img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: cover;">
-                                        @endif
+                                        <img src="{{ $detalle->producto->imagen_url ?: config('app.placeholder_image') }}" 
+                                             alt="{{ $detalle->producto->nombre }}" 
+                                             class="img-thumbnail me-3" style="width: 50px; height: 50px; object-fit: cover;">
                                         <div>
                                             <strong>{{ $detalle->producto->nombre }}</strong><br>
                                             <small class="text-muted">{{ $detalle->producto->unidad }}</small>
