@@ -18,7 +18,7 @@
             @foreach($productosDestacados as $producto)
             <div class="col-md-4 mb-4">
                 <div class="card h-100">
-                    <img src="{{ $producto->imagen ? asset('storage/' . $producto->imagen) : asset('images/placeholder.jpg') }}" 
+                    <img src="{{ $producto->imagen_url ?: config('app.placeholder_image') }}" 
                          class="card-img-top" alt="{{ $producto->nombre }}" style="height: 200px; object-fit: cover;">
                     <div class="card-body d-flex flex-column">
                         <h5 class="card-title">{{ $producto->nombre }}</h5>

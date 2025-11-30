@@ -15,7 +15,7 @@
 <div class="row">
     <div class="col-md-6">
         <div class="product-image">
-            <img src="{{ $producto->imagen ? asset('storage/' . $producto->imagen) : asset('images/placeholder.jpg') }}" 
+            <img src="{{ $producto->imagen_url ?: config('app.placeholder_image') }}" 
                  class="img-fluid rounded" alt="{{ $producto->nombre }}" style="max-height: 500px; object-fit: cover;">
         </div>
     </div>
@@ -178,7 +178,7 @@
             @foreach($productosRelacionados as $relacionado)
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
-                        <img src="{{ $relacionado->imagen ? asset('storage/' . $relacionado->imagen) : asset('images/placeholder.jpg') }}" 
+                        <img src="{{ $relacionado->imagen_url ?: config('app.placeholder_image') }}" 
                              class="card-img-top" alt="{{ $relacionado->nombre }}" style="height: 200px; object-fit: cover;">
                         <div class="card-body d-flex flex-column">
                             <h5 class="card-title">{{ $relacionado->nombre }}</h5>

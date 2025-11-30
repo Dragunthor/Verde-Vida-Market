@@ -34,5 +34,9 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'image_service' => [
+        'url' => env('IMAGE_SERVICE_URL'),
+        'api_key' => env('IMAGE_SERVICE_API_KEY'),
+    ],
 
 ];

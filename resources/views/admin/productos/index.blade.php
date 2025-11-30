@@ -90,7 +90,7 @@
                     @foreach($productos as $producto)
                     <tr>
                         <td>
-                            <img src="{{ $producto->imagen ? asset('storage/' . $producto->imagen) : asset('images/placeholder-product.jpg') }}" 
+                            <img src="{{ $producto->imagen_url ?: config('app.placeholder_image') }}" 
                                  alt="{{ $producto->nombre }}" 
                                  class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
                         </td>

@@ -232,7 +232,7 @@
                 </h6>
             </div>
             <div class="card-body text-center">
-                <img src="{{ $producto->imagen ? asset('storage/' . $producto->imagen) : asset('images/placeholder-product.jpg') }}" 
+                <img src="{{ $producto->imagen_url ?: config('app.placeholder_image') }}" 
                      alt="{{ $producto->nombre }}" 
                      class="img-thumbnail mb-3" style="max-width: 100%;">
                 <p class="text-muted small mb-0">

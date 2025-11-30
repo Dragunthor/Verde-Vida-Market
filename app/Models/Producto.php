@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Helpers\ImageServiceHelper;
 
 class Producto extends Model
 {
@@ -29,7 +30,10 @@ class Producto extends Model
         'aprobado' => 'boolean'
     ];
 
-    // Relaciones
+    // Nuevo: Accessor para URL de imagen
+    protected $appends = ['imagen_url', 'imagen_thumbnail'];
+
+    // Relaciones (se mantienen igual)
     public function categoria()
     {
         return $this->belongsTo(Categoria::class);
@@ -60,7 +64,7 @@ class Producto extends Model
         return $this->hasMany(CarritoTemporal::class);
     }
 
-    // Scopes
+    // Scopes (se mantienen igual)
     public function scopeActivos($query)
     {
         return $query->where('activo', true);
@@ -81,7 +85,7 @@ class Producto extends Model
         return $query->where('vendedor_id', $vendedorId);
     }
 
-    // Métodos de ayuda
+    // Métodos de ayuda (se mantienen igual)
     public function estaDisponible()
     {
         return $this->activo && $this->aprobado && $this->stock > 0;
@@ -95,5 +99,33 @@ class Producto extends Model
     public function totalResenas()
     {
         return $this->resenas()->where('aprobado', true)->count();
+    }
+
+    // NUEVOS MÉTODOS PARA IMAGEN SERVICE
+    public function getImagenUrlAttribute()
+    {
+        if (!$this->imagen) {
+            return null;
+        }
+        
+        return ImageServiceHelper::getInstance()->url($this->imagen);
+    }
+
+    public function getImagenThumbnailAttribute()
+    {
+        if (!$this->imagen) {
+            return null;
+        }
+        
+        return ImageServiceHelper::getInstance()->url($this->imagen, 400, 300, 80);
+    }
+
+    public function getImagenSmallAttribute()
+    {
+        if (!$this->imagen) {
+            return null;
+        }
+        
+        return ImageServiceHelper::getInstance()->url($this->imagen, 200, 150, 80);
     }
 }

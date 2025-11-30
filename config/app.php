@@ -14,6 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'Laravel'),
+    'placeholder_image' => env('PLACEHOLDER_IMAGE', 'https://www.nomadfoods.com/wp-content/uploads/2018/08/placeholder-1-e1533569576673-960x960.png'),
 
     /*
     |--------------------------------------------------------------------------

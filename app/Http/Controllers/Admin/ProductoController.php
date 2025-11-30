@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\Categoria;
 use App\Models\Usuario;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\ImageServiceHelper;
 
 class ProductoController extends Controller
 {
@@ -105,16 +105,21 @@ class ProductoController extends Controller
             'origen', 'categoria_id'
         ]);
 
-        // Usar el ID del admin como vendedor por defecto
         $data['vendedor_id'] = auth()->id();
-
-        // Campos booleanos
         $data['activo'] = $request->has('activo');
         $data['aprobado'] = $request->has('aprobado');
 
-        // Imagen
+        // Imagen usando Image Service Helper
         if ($request->hasFile('imagen')) {
-            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
+            $upload = ImageServiceHelper::getInstance()->upload($request->file('imagen'));
+            
+            if ($upload['success']) {
+                $data['imagen'] = $upload['filename'];
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Error al subir la imagen: ' . $upload['error'])
+                    ->withInput();
+            }
         }
 
         $producto = Producto::create($data);
@@ -147,24 +152,30 @@ class ProductoController extends Controller
             'origen', 'categoria_id', 'vendedor_id'
         ]);
 
-        // Manejar campos booleanos
         $data['activo'] = $request->has('activo');
         $data['aprobado'] = $request->has('aprobado');
 
-        // Manejar vendedor_id - si es vacío, usar null
         if (empty($data['vendedor_id'])) {
             $data['vendedor_id'] = auth()->id();
         }
 
-        // Manejar la imagen
+        // Manejar la imagen usando Image Service Helper
         if ($request->hasFile('imagen')) {
-            // Eliminar la imagen anterior si existe
-            if ($producto->imagen) {
-                Storage::disk('public')->delete($producto->imagen);
-            }
+            $upload = ImageServiceHelper::getInstance()->upload($request->file('imagen'));
             
-            // Guardar la nueva imagen
-            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
+            if ($upload['success']) {
+                // Eliminar la imagen anterior si existe
+                if ($producto->imagen) {
+                    ImageServiceHelper::getInstance()->delete($producto->imagen);
+                }
+                
+                // Guardar la nueva imagen
+                $data['imagen'] = $upload['filename'];
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Error al subir la imagen: ' . $upload['error'])
+                    ->withInput();
+            }
         }
 
         $producto->update($data);
@@ -182,7 +193,7 @@ class ProductoController extends Controller
 
         // Eliminar imagen si existe
         if ($producto->imagen) {
-            Storage::disk('public')->delete($producto->imagen);
+            ImageServiceHelper::getInstance()->delete($producto->imagen);
         }
 
         $producto->delete();

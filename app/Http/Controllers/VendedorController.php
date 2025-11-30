@@ -6,9 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Usuario;
 use App\Models\VendedorPerfil;
 use App\Models\Producto;
-use App\Models\Pedido;
-use App\Models\VentaVendedor;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\ImageServiceHelper;
 
 class VendedorController extends Controller
 {
@@ -195,26 +193,23 @@ class VendedorController extends Controller
 
         $productoData = $request->except('imagen');
         $productoData['vendedor_id'] = auth()->id();
-        $productoData['aprobado'] = false; // Requiere aprobación del admin
+        $productoData['aprobado'] = false;
 
         if ($request->hasFile('imagen')) {
-            $productoData['imagen'] = $request->file('imagen')->store('productos', 'public');
+            $upload = ImageServiceHelper::getInstance()->upload($request->file('imagen'));
+            
+            if ($upload['success']) {
+                $productoData['imagen'] = $upload['filename'];
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Error al subir la imagen: ' . $upload['error'])
+                    ->withInput();
+            }
         }
 
         Producto::create($productoData);
 
         return redirect('/vendedor/productos')->with('success', 'Producto creado. Esperando aprobación del administrador.');
-    }
-
-    public function editarProducto($id)
-    {
-        $verificacion = $this->verificarVendedorActivo();
-        if ($verificacion) return $verificacion;
-
-        $producto = auth()->user()->productos()->findOrFail($id);
-        $categorias = \App\Models\Categoria::all();
-        
-        return view('vendedor.productos.editar', compact('producto', 'categorias'));
     }
 
     public function actualizarProducto(Request $request, $id)
@@ -236,14 +231,22 @@ class VendedorController extends Controller
         ]);
 
         $productoData = $request->except('imagen');
-        $productoData['aprobado'] = false; // Al editar, requiere nueva aprobación
+        $productoData['aprobado'] = false;
 
         if ($request->hasFile('imagen')) {
-            // Eliminar imagen anterior si existe
-            if ($producto->imagen) {
-                Storage::disk('public')->delete($producto->imagen);
+            $upload = ImageServiceHelper::getInstance()->upload($request->file('imagen'));
+            
+            if ($upload['success']) {
+                // Eliminar imagen anterior si existe
+                if ($producto->imagen) {
+                    ImageServiceHelper::getInstance()->delete($producto->imagen);
+                }
+                $productoData['imagen'] = $upload['filename'];
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Error al subir la imagen: ' . $upload['error'])
+                    ->withInput();
             }
-            $productoData['imagen'] = $request->file('imagen')->store('productos', 'public');
         }
 
         $producto->update($productoData);

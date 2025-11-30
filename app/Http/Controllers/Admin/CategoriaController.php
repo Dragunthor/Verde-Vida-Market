@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Categoria;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\ImageServiceHelper;
 
 class CategoriaController extends Controller
 {
@@ -31,7 +31,15 @@ class CategoriaController extends Controller
         $categoriaData = $request->only(['nombre', 'descripcion']);
 
         if ($request->hasFile('imagen')) {
-            $categoriaData['imagen'] = $request->file('imagen')->store('categorias', 'public');
+            $upload = ImageServiceHelper::getInstance()->upload($request->file('imagen'));
+            
+            if ($upload['success']) {
+                $categoriaData['imagen'] = $upload['filename'];
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Error al subir la imagen: ' . $upload['error'])
+                    ->withInput();
+            }
         }
 
         Categoria::create($categoriaData);
@@ -59,11 +67,20 @@ class CategoriaController extends Controller
         $categoriaData = $request->only(['nombre', 'descripcion']);
 
         if ($request->hasFile('imagen')) {
-            // Eliminar imagen anterior si existe
-            if ($categoria->imagen) {
-                Storage::disk('public')->delete($categoria->imagen);
+            // Subir nueva imagen
+            $upload = ImageServiceHelper::getInstance()->upload($request->file('imagen'));
+            
+            if ($upload['success']) {
+                // Eliminar imagen anterior si existe
+                if ($categoria->imagen) {
+                    ImageServiceHelper::getInstance()->delete($categoria->imagen);
+                }
+                $categoriaData['imagen'] = $upload['filename'];
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Error al subir la imagen: ' . $upload['error'])
+                    ->withInput();
             }
-            $categoriaData['imagen'] = $request->file('imagen')->store('categorias', 'public');
         }
 
         $categoria->update($categoriaData);
@@ -84,7 +101,7 @@ class CategoriaController extends Controller
 
         // Eliminar imagen si existe
         if ($categoria->imagen) {
-            Storage::disk('public')->delete($categoria->imagen);
+            ImageServiceHelper::getInstance()->delete($categoria->imagen);
         }
 
         $categoria->delete();
