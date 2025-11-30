@@ -140,8 +140,8 @@
                                 </li>
                             @else
                                 <li class="nav-item">
-                                    <a class="nav-link text-warning" href="{{ route('vendedor.solicitud') }}">
-                                        <small>Vendedor Pendiente</small>
+                                    <a class="nav-link" href="{{ route('vendedor.solicitud') }}">
+                                        <span class="vendedor-badge">Vendedor Pendiente</span>
                                     </a>
                                 </li>
                             @endif
@@ -149,7 +149,9 @@
 
                         @if(auth()->user()->esAdmin())
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ route('admin.dashboard') }}">Admin</a>
+                                <a class="nav-link" href="{{ route('admin.dashboard') }}">
+                                    <span class="vendedor-badge">Admin</span>
+                                </a>
                             </li>
                         @endif
 
@@ -160,7 +162,7 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a class="dropdown-item" href="{{ route('perfil.edit') }}">Mi Perfil</a></li>
-                                <li><a class="dropdown-item" href="{{ route('resenas.mis-resenas') }}">Mis Reseñas</a></li> <!-- NUEVO -->
+                                <li><a class="dropdown-item" href="{{ route('resenas.mis-resenas') }}">Mis Reseñas</a></li>
                                 @if(!auth()->user()->esVendedor() && !auth()->user()->esAdmin())
                                     <li><a class="dropdown-item" href="{{ route('vendedor.solicitud') }}">Ser Vendedor</a></li>
                                 @endif

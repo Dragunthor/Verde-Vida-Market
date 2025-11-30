@@ -2,14 +2,16 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": {
     "builder": "RAILPACK",
-    "buildCommand": "composer install --optimize-autoloader --no-dev\nphp artisan config:cache\nphp artisan route:cache\n"
+    "buildCommand": "composer install --optimize-autoloader --no-dev\nphp artisan config:cache\nphp artisan route:cache\nphp artisan view:cache\n"
   },
   "deploy": {
     "runtime": "V2",
     "numReplicas": 1,
-    "startCommand": "php artisan migrate --force && php artisan db:seed --force && php artisan storage:link || true && /start-container.sh",
+    "startCommand": "php artisan migrate --force && php artisan storage:link || true && /start-container.sh",
     "sleepApplication": false,
     "useLegacyStacker": false,
+    "healthcheckPath": "/",
+    "healthcheckTimeout": 300,
     "multiRegionConfig": {
       "us-west2": {
         "numReplicas": 1
