@@ -137,8 +137,8 @@
                                     </h6>
                                 </div>
                                 <div class="card-body text-center">
-                                    @if($producto->imagen)
-                                        <img src="{{ asset('storage/' . $producto->imagen) }}" 
+                                    @if($producto->imagen_url)
+                                        <img src="{{ $producto->imagen_url ?: config('app.placeholder_image') }}" 
                                              alt="{{ $producto->nombre }}" 
                                              class="img-thumbnail mb-3" style="max-width: 100%;">
                                         <p class="text-muted small">Imagen actual</p>

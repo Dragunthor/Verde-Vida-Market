@@ -67,12 +67,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vendedor/solicitud', [VendedorController::class, 'solicitud'])->name('vendedor.solicitud');
     Route::post('/vendedor/solicitud', [VendedorController::class, 'enviarSolicitud'])->name('vendedor.enviarSolicitud');
     
-    // Rutas de vendedor (las verificaciones van en el controlador - NO USAR MIDDLEWARE)
+    // Rutas de vendedor
     Route::get('/vendedor/dashboard', [VendedorController::class, 'dashboard'])->name('vendedor.dashboard');
     Route::get('/vendedor/productos', [VendedorController::class, 'productos'])->name('vendedor.productos');
     Route::get('/vendedor/productos/crear', [VendedorController::class, 'crearProducto'])->name('vendedor.productos.crear');
     Route::post('/vendedor/productos', [VendedorController::class, 'guardarProducto'])->name('vendedor.productos.guardar');
     Route::get('/vendedor/productos/{id}/editar', [VendedorController::class, 'editarProducto'])->name('vendedor.productos.editar');
+    Route::put('/vendedor/productos/{id}/toggle-activo', [VendedorController::class, 'toggleActivo'])->name('vendedor.productos.toggle-activo');
     Route::put('/vendedor/productos/{id}', [VendedorController::class, 'actualizarProducto'])->name('vendedor.productos.actualizar');
     Route::get('/vendedor/pedidos', [VendedorController::class, 'pedidos'])->name('vendedor.pedidos');
     Route::get('/vendedor/ventas', [VendedorController::class, 'ventas'])->name('vendedor.ventas');

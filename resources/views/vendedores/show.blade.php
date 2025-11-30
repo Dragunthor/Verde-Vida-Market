@@ -108,7 +108,7 @@
                 @foreach($productos as $producto)
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="card h-100">
-                            <img src="{{ $producto->imagen ? asset('storage/' . $producto->imagen) : asset('images/placeholder.jpg') }}" 
+                            <img src="{{ $producto->imagen_url ?: config('app.placeholder_image') }}" 
                                  class="card-img-top" alt="{{ $producto->nombre }}" style="height: 200px; object-fit: cover;">
                             
                             <div class="card-body d-flex flex-column">

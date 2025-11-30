@@ -101,7 +101,7 @@
                     @foreach($productos as $producto)
                     <tr>
                         <td>
-                            <img src="{{ $producto->imagen ? asset('storage/' . $producto->imagen) : asset('images/placeholder-product.jpg') }}" 
+                            <img src="{{ $producto->imagen_url ?: config('app.placeholder_image') }}" 
                                  alt="{{ $producto->nombre }}" 
                                  class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
                         </td>
@@ -137,25 +137,27 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
+                                {{-- Botón Editar --}}
                                 <a href="{{ route('vendedor.productos.editar', $producto->id) }}" 
-                                   class="btn btn-outline-primary" title="Editar">
+                                class="btn btn-outline-primary" title="Editar">
                                     <i class="fa fa-edit"></i>
                                 </a>
                                 
+                                {{-- Botón Activar/Desactivar --}}
                                 @if($producto->activo)
-                                    <form method="POST" action="{{ route('vendedor.productos.actualizar', $producto->id) }}" class="d-inline">
+                                    <form method="POST" action="{{ route('vendedor.productos.toggle-activo', $producto->id) }}" 
+                                        class="d-inline" onsubmit="return confirm('¿Estás seguro de desactivar este producto?')">
                                         @csrf
                                         @method('PUT')
-                                        <input type="hidden" name="activo" value="0">
                                         <button type="submit" class="btn btn-outline-warning" title="Desactivar">
                                             <i class="fa fa-pause"></i>
                                         </button>
                                     </form>
                                 @else
-                                    <form method="POST" action="{{ route('vendedor.productos.actualizar', $producto->id) }}" class="d-inline">
+                                    <form method="POST" action="{{ route('vendedor.productos.toggle-activo', $producto->id) }}" 
+                                        class="d-inline" onsubmit="return confirm('¿Estás seguro de activar este producto?')">
                                         @csrf
                                         @method('PUT')
-                                        <input type="hidden" name="activo" value="1">
                                         <button type="submit" class="btn btn-outline-success" title="Activar">
                                             <i class="fa fa-play"></i>
                                         </button>

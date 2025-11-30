@@ -213,13 +213,20 @@ class VendedorController extends Controller
         return redirect('/vendedor/productos')->with('success', 'Producto creado. Esperando aprobación del administrador.');
     }
 
-    public function actualizarProducto(Request $request, $id)
+        public function actualizarProducto(Request $request, $id)
     {
         $verificacion = $this->verificarVendedorActivo();
         if ($verificacion) return $verificacion;
 
         $producto = auth()->user()->productos()->findOrFail($id);
 
+        // Si solo se está cambiando el estado activo (toggle)
+        if ($request->has('activo') && count($request->all()) <= 2) {
+            $producto->update(['activo' => $request->activo]);
+            return redirect('/vendedor/productos')->with('success', 'Estado del producto actualizado correctamente.');
+        }
+
+        // Validación para actualización completa
         $request->validate([
             'nombre' => 'required|string|max:255',
             'descripcion' => 'required|string',
@@ -232,7 +239,7 @@ class VendedorController extends Controller
         ]);
 
         $productoData = $request->except('imagen');
-        $productoData['aprobado'] = false;
+        $productoData['aprobado'] = false; // Requiere nueva aprobación
 
         if ($request->hasFile('imagen')) {
             $upload = ImageServiceHelper::getInstance()->upload($request->file('imagen'));
@@ -362,5 +369,38 @@ class VendedorController extends Controller
             'ventasPorMes',
             'productosVendidos'
         ));
+    }
+    public function editarProducto($id)
+    {
+        $verificacion = $this->verificarVendedorActivo();
+        if ($verificacion) return $verificacion;
+
+        $producto = auth()->user()->productos()->findOrFail($id);
+        $categorias = \App\Models\Categoria::all();
+        
+        return view('vendedor.productos.editar', compact('producto', 'categorias'));
+    }
+
+    public function toggleActivo($id)
+    {
+        $verificacion = $this->verificarVendedorActivo();
+        if ($verificacion) return $verificacion;
+
+        try {
+            $producto = auth()->user()->productos()->findOrFail($id);
+            
+            // Cambiar el estado activo
+            $nuevoEstado = !$producto->activo;
+            $producto->update(['activo' => $nuevoEstado]);
+
+            $mensaje = $nuevoEstado ? 'Producto activado correctamente.' : 'Producto desactivado correctamente.';
+            
+            return redirect('/vendedor/productos')->with('success', $mensaje);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect('/vendedor/productos')->with('error', 'Producto no encontrado.');
+        } catch (\Exception $e) {
+            return redirect('/vendedor/productos')->with('error', 'Error al cambiar el estado del producto.');
+        }
     }
 }
