@@ -7,7 +7,7 @@
   "deploy": {
     "runtime": "V2",
     "numReplicas": 1,
-    "startCommand": "php artisan migrate:fresh --seed && php artisan storage:link || true && /start-container.sh",
+    "startCommand": "php artisan migrate:fresh --seed --force && php artisan storage:link || true && /start-container.sh",
     "sleepApplication": false,
     "useLegacyStacker": false,
     "healthcheckPath": "/",
