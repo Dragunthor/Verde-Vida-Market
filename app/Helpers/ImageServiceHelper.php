@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ImageServiceHelper
 {
@@ -12,8 +13,19 @@ class ImageServiceHelper
     
     private function __construct()
     {
-        $this->baseUrl = config('services.image_service.url');
-        $this->apiKey = config('services.image_service.api_key');
+        // Usar env() directamente en lugar de config()
+        $this->baseUrl = env('IMAGE_SERVICE_URL');
+        $this->apiKey = env('IMAGE_SERVICE_API_KEY');
+        
+        // Remover comillas si existen
+        $this->baseUrl = trim($this->baseUrl ?? '', "'\"");
+        $this->apiKey = trim($this->apiKey ?? '', "'\"");
+        
+        // Log para debugging
+        Log::info('ImageServiceHelper initialized', [
+            'base_url' => $this->baseUrl ? '***' . substr($this->baseUrl, -20) : 'NULL',
+            'api_key_set' => !empty($this->apiKey)
+        ]);
     }
     
     public static function getInstance()
@@ -26,24 +38,44 @@ class ImageServiceHelper
     
     public function upload($image, $fileName = null)
     {
-        if (!$this->baseUrl || !$this->apiKey) {
+        // Validar configuración
+        if (empty($this->baseUrl) || empty($this->apiKey)) {
+            Log::error('Image service configuration missing', [
+                'base_url_empty' => empty($this->baseUrl),
+                'api_key_empty' => empty($this->apiKey)
+            ]);
+            
             return [
                 'success' => false,
-                'error' => 'Image service not configured'
+                'error' => 'Image service not configured. Check IMAGE_SERVICE_URL and IMAGE_SERVICE_API_KEY environment variables.'
             ];
         }
 
         $fileName = $fileName ?: time() . '_' . $this->sanitizeFileName($image->getClientOriginalName());
         
         try {
+            Log::info('Starting image upload', [
+                'filename' => $fileName,
+                'file_size' => $image->getSize(),
+                'mime_type' => $image->getMimeType()
+            ]);
+
             $response = Http::withHeaders([
                 'x-api-key' => $this->apiKey,
                 'Content-Type' => $image->getMimeType()
-            ])->withBody(
+            ])
+            ->withBody(
                 file_get_contents($image->getRealPath()), 
                 $image->getMimeType()
-            )->timeout(30)->put("{$this->baseUrl}/files/{$fileName}");
+            )
+            ->timeout(30)
+            ->put("{$this->baseUrl}/files/{$fileName}");
             
+            Log::info('Image upload response', [
+                'status_code' => $response->status(),
+                'success' => $response->successful()
+            ]);
+
             if ($response->successful()) {
                 return [
                     'success' => true,
@@ -54,13 +86,20 @@ class ImageServiceHelper
             
             return [
                 'success' => false,
-                'error' => $response->body(),
+                'error' => 'Server returned: ' . $response->status() . ' - ' . $response->body(),
                 'status' => $response->status()
             ];
+            
         } catch (\Exception $e) {
+            Log::error('Image upload failed', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
             return [
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => 'Upload failed: ' . $e->getMessage()
             ];
         }
     }
@@ -96,15 +135,14 @@ class ImageServiceHelper
             
             return $response->successful();
         } catch (\Exception $e) {
+            Log::error('Image delete failed', ['error' => $e->getMessage()]);
             return false;
         }
     }
     
     private function sanitizeFileName($filename)
     {
-        // Remover caracteres especiales y espacios
         $filename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $filename);
-        // Limitar longitud
         $filename = substr($filename, 0, 100);
         return $filename;
     }

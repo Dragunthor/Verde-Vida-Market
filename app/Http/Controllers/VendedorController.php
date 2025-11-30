@@ -7,6 +7,7 @@ use App\Models\Usuario;
 use App\Models\VendedorPerfil;
 use App\Models\Producto;
 use App\Helpers\ImageServiceHelper;
+use App\Models\VentaVendedor;
 
 class VendedorController extends Controller
 {

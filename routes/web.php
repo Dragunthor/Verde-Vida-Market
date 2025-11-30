@@ -140,4 +140,24 @@ Route::middleware(['auth'])->group(function () {
         // Configuración
         Route::get('/configuracion', [AdminController::class, 'configuracion'])->name('configuracion');
     });
+    // En routes/web.php - temporal
+    Route::get('/debug-image-service', function() {
+        $config = [
+            'url' => config('services.image_service.url'),
+            'api_key' => config('services.image_service.api_key') ? '***' . substr(config('services.image_service.api_key'), -4) : 'No configurada',
+            'env_url' => env('IMAGE_SERVICE_URL'),
+            'env_api_key' => env('IMAGE_SERVICE_API_KEY') ? '***' . substr(env('IMAGE_SERVICE_API_KEY'), -4) : 'No configurada'
+        ];
+        
+        // Test de conexión
+        try {
+            $client = new \GuzzleHttp\Client(['verify' => false]);
+            $response = $client->get(config('services.image_service.url') . '/dashboard', ['timeout' => 10]);
+            $config['connection_test'] = 'SUCCESS - Status: ' . $response->getStatusCode();
+        } catch (\Exception $e) {
+            $config['connection_test'] = 'FAILED - ' . $e->getMessage();
+        }
+        
+        return response()->json($config);
+    });
 });
