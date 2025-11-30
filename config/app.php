@@ -15,6 +15,7 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
     'placeholder_image' => env('PLACEHOLDER_IMAGE', 'https://www.nomadfoods.com/wp-content/uploads/2018/08/placeholder-1-e1533569576673-960x960.png'),
+    
 
     /*
     |--------------------------------------------------------------------------
@@ -53,7 +54,7 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => env('APP_URL', 'https://mtwichelimageservicelatest-production-c3b7.up.railway.app'),
 
     /*
     |--------------------------------------------------------------------------
