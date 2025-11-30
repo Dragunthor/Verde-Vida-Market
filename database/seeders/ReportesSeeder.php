@@ -52,6 +52,24 @@ class ReportesSeeder extends Seeder
                 'tipo' => 'producto',
                 'estado' => 'en_revision',
             ],
+            [
+                'titulo' => 'Producto no coincide con la descripción',
+                'descripcion' => 'El producto recibido es diferente al que se muestra en la página.',
+                'tipo' => 'producto',
+                'estado' => 'pendiente',
+            ],
+            [
+                'titulo' => 'Problema con el método de pago',
+                'descripcion' => 'Tuve problemas al intentar pagar con tarjeta de crédito.',
+                'tipo' => 'tecnico',
+                'estado' => 'en_revision',
+            ],
+            [
+                'titulo' => 'Vendedor con actitud poco profesional',
+                'descripcion' => 'El vendedor fue grosero cuando intenté hacer una consulta sobre mi pedido.',
+                'tipo' => 'vendedor',
+                'estado' => 'pendiente',
+            ],
         ];
 
         foreach ($reportes as $reporteData) {
@@ -66,7 +84,8 @@ class ReportesSeeder extends Seeder
                     $objetoId = $pedidos->random()->id;
                     break;
                 case 'vendedor':
-                    $objetoId = Usuario::where('rol', 'vendedor')->inRandomOrder()->first()->id;
+                    $vendedor = Usuario::where('rol', 'vendedor')->inRandomOrder()->first();
+                    $objetoId = $vendedor ? $vendedor->id : 1;
                     break;
                 default:
                     $objetoId = 1; // Para técnico

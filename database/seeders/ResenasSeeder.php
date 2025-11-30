@@ -19,7 +19,7 @@ class ResenasSeeder extends Seeder
         $productos = Producto::where('aprobado', true)->get();
         $pedidosEntregados = Pedido::where('estado', 'entregado')->get();
 
-        // Reseñas de productos
+        // Reseñas de productos - solo para pedidos entregados
         $comentariosProductos = [
             'Excelente calidad, muy fresco y delicioso.',
             'Llegó en perfecto estado, muy satisfecho con la compra.',
@@ -33,23 +33,41 @@ class ResenasSeeder extends Seeder
             'Calidad premium, vale cada sol invertido.',
         ];
 
-        foreach ($productos->take(15) as $producto) {
+        foreach ($productos->take(25) as $producto) {
             $cliente = $clientes->random();
-            $pedido = $pedidosEntregados->random();
+            
+            // Buscar un pedido entregado que contenga este producto
+            $pedido = $pedidosEntregados->filter(function($pedido) use ($producto) {
+                return $pedido->detalles->contains('producto_id', $producto->id);
+            })->first();
 
-            ResenaProducto::create([
-                'producto_id' => $producto->id,
-                'usuario_id' => $cliente->id,
-                'pedido_id' => $pedido->id,
-                'calificacion' => rand(3, 5),
-                'comentario' => $comentariosProductos[array_rand($comentariosProductos)],
-                'aprobado' => rand(0, 1), // Algunas pendientes de aprobación
-                'created_at' => Carbon::now()->subDays(rand(1, 30)),
-            ]);
+            // Si no hay pedido con este producto, saltar
+            if (!$pedido) continue;
+
+            // Verificar que el cliente no haya reseñado ya este producto
+            $yaResenado = ResenaProducto::where('producto_id', $producto->id)
+                ->where('usuario_id', $cliente->id)
+                ->exists();
+                
+            if (!$yaResenado) {
+                ResenaProducto::create([
+                    'producto_id' => $producto->id,
+                    'usuario_id' => $cliente->id,
+                    'pedido_id' => $pedido->id,
+                    'calificacion' => rand(3, 5),
+                    'comentario' => $comentariosProductos[array_rand($comentariosProductos)],
+                    'aprobado' => rand(0, 1), // Algunas pendientes de aprobación
+                    'created_at' => Carbon::now()->subDays(rand(1, 30)),
+                ]);
+            }
         }
 
-        // Reseñas de vendedores
-        $vendedores = Usuario::where('rol', 'vendedor')->get();
+        // Reseñas de vendedores - solo para pedidos entregados
+        $vendedores = Usuario::where('rol', 'vendedor')
+            ->whereHas('perfilVendedor', function($query) {
+                $query->where('activo_vendedor', true);
+            })->get();
+
         $comentariosVendedores = [
             'Excelente atención, muy profesional.',
             'Productos de calidad y buen servicio.',
@@ -65,22 +83,36 @@ class ResenasSeeder extends Seeder
 
         foreach ($vendedores as $vendedor) {
             $cliente = $clientes->random();
-            $pedido = $pedidosEntregados->random();
+            
+            // Buscar un pedido entregado que contenga productos de este vendedor
+            $pedido = $pedidosEntregados->filter(function($pedido) use ($vendedor) {
+                return $pedido->detalles->contains('producto.vendedor_id', $vendedor->id);
+            })->first();
 
-            ResenaVendedor::create([
-                'vendedor_id' => $vendedor->id,
-                'usuario_id' => $cliente->id,
-                'pedido_id' => $pedido->id,
-                'calificacion' => rand(3, 5),
-                'comentario' => $comentariosVendedores[array_rand($comentariosVendedores)],
-                'aprobado' => rand(0, 1), // Algunas pendientes de aprobación
-                'created_at' => Carbon::now()->subDays(rand(1, 30)),
-            ]);
+            // Si no hay pedido con productos de este vendedor, saltar
+            if (!$pedido) continue;
+
+            // Verificar que el cliente no haya reseñado ya este vendedor
+            $yaResenado = ResenaVendedor::where('vendedor_id', $vendedor->id)
+                ->where('usuario_id', $cliente->id)
+                ->exists();
+                
+            if (!$yaResenado) {
+                ResenaVendedor::create([
+                    'vendedor_id' => $vendedor->id,
+                    'usuario_id' => $cliente->id,
+                    'pedido_id' => $pedido->id,
+                    'calificacion' => rand(3, 5),
+                    'comentario' => $comentariosVendedores[array_rand($comentariosVendedores)],
+                    'aprobado' => rand(0, 1), // Algunas pendientes de aprobación
+                    'created_at' => Carbon::now()->subDays(rand(1, 30)),
+                ]);
+            }
         }
 
         $this->command->info('Reseñas creadas exitosamente!');
-        $this->command->info('Reseñas de productos: 15');
-        $this->command->info('Reseñas de vendedores: ' . $vendedores->count());
+        $this->command->info('Reseñas de productos: ' . ResenaProducto::count());
+        $this->command->info('Reseñas de vendedores: ' . ResenaVendedor::count());
         $this->command->info('Algunas reseñas están pendientes de aprobación');
     }
 }

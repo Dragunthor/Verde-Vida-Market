@@ -16,7 +16,12 @@ class PedidosSeeder extends Seeder
     public function run()
     {
         $clientes = Usuario::where('rol', 'cliente')->get();
-        $productos = Producto::where('aprobado', true)->get();
+        
+        // Solo productos de vendedores aprobados
+        $productos = Producto::where('aprobado', true)
+            ->whereHas('vendedor.perfilVendedor', function($query) {
+                $query->where('activo_vendedor', true);
+            })->get();
 
         if ($clientes->isEmpty() || $productos->isEmpty()) {
             $this->command->error('No hay clientes o productos aprobados para crear pedidos!');
@@ -66,8 +71,8 @@ class PedidosSeeder extends Seeder
                     'updated_at' => $fechaPedido,
                 ]);
 
-                // Si el producto tiene vendedor, crear registro en ventas_vendedor
-                if ($producto->vendedor_id) {
+                // Solo crear ventas para vendedores aprobados
+                if ($producto->vendedor_id && $producto->vendedor->perfilVendedor->activo_vendedor) {
                     $comision = ($subtotal * 10) / 100; // 10% de comisión
                     $totalVendedor = $subtotal - $comision;
 
@@ -95,5 +100,6 @@ class PedidosSeeder extends Seeder
 
         $this->command->info('Pedidos creados exitosamente!');
         $this->command->info('Total: 20 pedidos con diferentes estados');
+        $this->command->info('Todos los pedidos contienen solo productos de vendedores aprobados');
     }
 }

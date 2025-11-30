@@ -13,7 +13,16 @@ class ProductosSeeder extends Seeder
     public function run()
     {
         $categorias = Categoria::all();
-        $vendedores = Usuario::where('rol', 'vendedor')->orWhere('rol', 'admin')->get();
+        
+        // Solo vendedores aprobados (con perfil activo) o admin pueden tener productos
+        $vendedores = Usuario::whereHas('perfilVendedor', function($query) {
+            $query->where('activo_vendedor', true);
+        })->orWhere('rol', 'admin')->get();
+
+        if ($vendedores->isEmpty()) {
+            $this->command->error('No hay vendedores aprobados para asignar productos!');
+            return;
+        }
 
         $productos = [
             // Frutas Frescas
@@ -224,15 +233,184 @@ class ProductosSeeder extends Seeder
                 'stock' => 8,
                 'unidad' => 'L',
                 'origen' => 'Ica, Ica',
-                'imagen' => 'aceite.png',
+                'imagen' => 'oliva.png',
                 'activo' => true,
                 'aprobado' => false,
                 'categoria_id' => $categorias->where('nombre', 'Especias y Condimentos')->first()->id,
             ],
+                    // Productos Lácteos Alternativos
+            [
+                'nombre' => 'Leche de Almendras Orgánica',
+                'descripcion' => 'Leche vegetal de almendras 100% natural sin azúcares añadidos.',
+                'precio' => 12.50,
+                'stock' => 25,
+                'unidad' => 'L',
+                'origen' => 'Lima, Lima',
+                'imagen' => 'leche-almendras.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Productos Lácteos Alternativos')->first()->id,
+            ],
+            [
+                'nombre' => 'Yogurt de Coco Natural',
+                'descripcion' => 'Yogurt vegetal de coco, cremoso y bajo en carbohidratos.',
+                'precio' => 9.80,
+                'stock' => 18,
+                'unidad' => 'unidad',
+                'origen' => 'Arequipa, Arequipa',
+                'imagen' => 'yogurt-coco.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Productos Lácteos Alternativos')->first()->id,
+            ],
+
+            // Especias y Condimentos
+            [
+                'nombre' => 'Pimentón Dulce Orgánico',
+                'descripcion' => 'Pimentón molido dulce, perfecto para adobar y sazonar.',
+                'precio' => 8.50,
+                'stock' => 30,
+                'unidad' => '100g',
+                'origen' => 'Cusco, Cusco',
+                'imagen' => 'pimenton.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Especias y Condimentos')->first()->id,
+            ],
+            [
+                'nombre' => 'Comino en Grano',
+                'descripcion' => 'Comino en grano de alta calidad, aroma intenso y característico.',
+                'precio' => 6.20,
+                'stock' => 40,
+                'unidad' => '100g',
+                'origen' => 'Ayacucho, Ayacucho',
+                'imagen' => 'comino.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Especias y Condimentos')->first()->id,
+            ],
+
+            // Bebidas Naturales
+            [
+                'nombre' => 'Jugo de Maracuyá Natural',
+                'descripcion' => 'Jugo 100% natural de maracuyá, sin conservantes ni azúcar añadida.',
+                'precio' => 15.00,
+                'stock' => 20,
+                'unidad' => 'L',
+                'origen' => 'Oxapampa, Pasco',
+                'imagen' => 'jugo-maracuya.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Bebidas Naturales')->first()->id,
+            ],
+            [
+                'nombre' => 'Té de Hierbas Andinas',
+                'descripcion' => 'Mezcla de hierbas andinas: muña, cedrón y manzanilla.',
+                'precio' => 18.50,
+                'stock' => 35,
+                'unidad' => '100g',
+                'origen' => 'Puno, Puno',
+                'imagen' => 'te-andino.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Bebidas Naturales')->first()->id,
+            ],
+
+            // Snacks Saludables
+            [
+                'nombre' => 'Barritas de Cereal y Quinua',
+                'descripcion' => 'Barritas energéticas de cereales, quinua y miel de abeja.',
+                'precio' => 4.50,
+                'stock' => 50,
+                'unidad' => 'unidad',
+                'origen' => 'Lima, Lima',
+                'imagen' => 'barrita-cereal.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Snacks Saludables')->first()->id,
+            ],
+            [
+                'nombre' => 'Chips de Camote Horneados',
+                'descripcion' => 'Chips de camote horneados, crujientes y sin aceite añadido.',
+                'precio' => 7.80,
+                'stock' => 25,
+                'unidad' => '150g',
+                'origen' => 'Ica, Ica',
+                'imagen' => 'chips-camote.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Snacks Saludables')->first()->id,
+            ],
+
+            // Carnes y Aves
+            [
+                'nombre' => 'Pechuga de Pollo Orgánico',
+                'descripcion' => 'Pechuga de pollo de corral, criado sin hormonas ni antibióticos.',
+                'precio' => 28.00,
+                'stock' => 15,
+                'unidad' => 'kg',
+                'origen' => 'Huancayo, Junín',
+                'imagen' => 'pollo-organico.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Carnes y Aves')->first()->id,
+            ],
+            [
+                'nombre' => 'Huevos de Codorniz',
+                'descripcion' => 'Huevos de codorniz frescos, ricos en proteínas y vitaminas.',
+                'precio' => 8.00,
+                'stock' => 30,
+                'unidad' => '30 unidades',
+                'origen' => 'Cañete, Lima',
+                'imagen' => 'huevos-codorniz.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Carnes y Aves')->first()->id,
+            ],
+
+            // Productos de Limpieza Ecológicos
+            [
+                'nombre' => 'Detergente Líquido Biodegradable',
+                'descripcion' => 'Detergente para ropa biodegradable, hipoalergénico y sin fosfatos.',
+                'precio' => 22.00,
+                'stock' => 20,
+                'unidad' => 'L',
+                'origen' => 'Lima, Lima',
+                'imagen' => 'detergente-eco.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Productos de Limpieza Ecológicos')->first()->id,
+            ],
+            [
+                'nombre' => 'Jabón Líquido para Manos Natural',
+                'descripcion' => 'Jabón líquido con aceites esenciales, sin parabenos ni sulfatos.',
+                'precio' => 12.50,
+                'stock' => 35,
+                'unidad' => '500ml',
+                'origen' => 'Arequipa, Arequipa',
+                'imagen' => 'jabon-manos.png',
+                'activo' => true,
+                'aprobado' => true,
+                'categoria_id' => $categorias->where('nombre', 'Productos de Limpieza Ecológicos')->first()->id,
+            ],
+
+            // Más productos pendientes de aprobación
+            [
+                'nombre' => 'Mermelada de Aguaymanto Casera',
+                'descripcion' => 'Mermelada artesanal de aguaymanto, baja en azúcar.',
+                'precio' => 18.00,
+                'stock' => 12,
+                'unidad' => '250g',
+                'origen' => 'Huánuco, Huánuco',
+                'imagen' => 'mermelada-aguaymanto.png',
+                'activo' => true,
+                'aprobado' => false,
+                'categoria_id' => $categorias->where('nombre', 'Snacks Saludables')->first()->id,
+            ],
         ];
 
         foreach ($productos as $producto) {
-            // Asignar vendedor aleatorio
+            // Asignar vendedor aleatorio de los aprobados
             $producto['vendedor_id'] = $vendedores->random()->id;
             Producto::create($producto);
         }
@@ -240,5 +418,6 @@ class ProductosSeeder extends Seeder
         $this->command->info('Productos creados exitosamente!');
         $this->command->info('Total: ' . count($productos) . ' productos');
         $this->command->info('Productos pendientes: ' . collect($productos)->where('aprobado', false)->count());
+        $this->command->info('Todos los productos asignados a vendedores aprobados o admin');
     }
 }

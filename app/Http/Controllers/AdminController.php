@@ -425,4 +425,60 @@ class AdminController extends Controller
             'comisionesPorMes'
         ));
     }
+    public function mostrarVendedor($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $vendedor = VendedorPerfil::with(['usuario', 'resenas'])->findOrFail($id);
+
+        return view('admin.vendedores.show', compact('vendedor'));
+    }
+    public function editarVendedor($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $vendedor = VendedorPerfil::with('usuario')->findOrFail($id);
+
+        return view('admin.vendedores.edit', compact('vendedor'));
+    }
+
+    public function actualizarVendedor(Request $request, $id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $vendedor = VendedorPerfil::findOrFail($id);
+
+        $request->validate([
+            'descripcion' => 'required|string|min:50|max:1000',
+            'direccion' => 'required|string|max:500',
+            'metodos_entrega' => 'required|in:recogida,delivery,ambos',
+            'horario_atencion' => 'nullable|string|max:255',
+            'activo_vendedor' => 'boolean'
+        ]);
+
+        $vendedor->update([
+            'descripcion' => $request->descripcion,
+            'direccion' => $request->direccion,
+            'metodos_entrega' => $request->metodos_entrega,
+            'horario_atencion' => $request->horario_atencion,
+            'activo_vendedor' => $request->has('activo_vendedor')
+        ]);
+
+        return redirect()->route('admin.vendedores.show', $vendedor->id)
+            ->with('success', 'Vendedor actualizado correctamente.');
+    }
+
+    public function productosVendedor($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $vendedor = VendedorPerfil::with('usuario')->findOrFail($id);
+        $productos = $vendedor->usuario->productos()->with('categoria')->get();
+
+        return view('admin.vendedores.productos', compact('vendedor', 'productos'));
+    }
 }
