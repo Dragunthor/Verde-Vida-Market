@@ -123,7 +123,7 @@
                             <input class="form-check-input @error('terminos') is-invalid @enderror" 
                                    type="checkbox" id="terminos" name="terminos" required>
                             <label class="form-check-label" for="terminos">
-                                Acepto los <a href="#" target="_blank">Términos y Condiciones para Vendedores</a> 
+                                Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#terminosModal">Términos y Condiciones para Vendedores</a> 
                                 y comprendo que se aplicará una comisión del 10% sobre cada venta.
                             </label>
                             @error('terminos')
@@ -196,6 +196,64 @@
             </div>
         </div>
         @endif
+    </div>
+</div>
+
+<!-- Modal de Términos y Condiciones -->
+<div class="modal fade" id="terminosModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Términos y Condiciones para Vendedores</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Aceptación de los Términos</h6>
+                <p>Al registrarse como vendedor en VerdeVida Market, usted acepta cumplir con estos términos y condiciones, así como con nuestras políticas de privacidad y uso de la plataforma.</p>
+                
+                <h6>2. Responsabilidades del Vendedor</h6>
+                <ul>
+                    <li>Garantizar la calidad y autenticidad de todos los productos listados</li>
+                    <li>Mantener información precisa y actualizada sobre productos, precios y disponibilidad</li>
+                    <li>Cumplir con los plazos de entrega establecidos</li>
+                    <li>Proporcionar un servicio al cliente profesional y responder consultas oportunamente</li>
+                </ul>
+                
+                <h6>3. Comisiones y Pagos</h6>
+                <p>VerdeVida Market aplica una comisión del 10% sobre cada venta realizada a través de la plataforma. Los pagos a vendedores se procesan mensualmente, dentro de los primeros 5 días hábiles del mes siguiente.</p>
+                
+                <h6>4. Política de Productos</h6>
+                <p>Está prohibido listar productos que:</p>
+                <ul>
+                    <li>No sean orgánicos, naturales o ecológicos</li>
+                    <li>Incumplan las normativas sanitarias locales</li>
+                    <li>Estén caducados o en mal estado</li>
+                    <li>Infrinjan derechos de propiedad intelectual</li>
+                </ul>
+                
+                <h6>5. Cancelaciones y Reembolsos</h6>
+                <p>Los vendedores deben aceptar nuestra política de cancelaciones y reembolsos, que permite a los clientes solicitar reembolsos dentro de los 7 días posteriores a la recepción del producto en caso de problemas de calidad o entrega.</p>
+                
+                <h6>6. Suspensión de Cuenta</h6>
+                <p>VerdeVida Market se reserva el derecho de suspender o cancelar cuentas de vendedores que:</p>
+                <ul>
+                    <li>Incumplan repetidamente estos términos</li>
+                    <li>Reciban múltiples quejas de clientes</li>
+                    <li>Listen productos prohibidos</li>
+                    <li>Realicen actividades fraudulentas</li>
+                </ul>
+                
+                <h6>7. Modificaciones</h6>
+                <p>Nos reservamos el derecho de modificar estos términos en cualquier momento. Los cambios serán notificados por email con 15 días de anticipación.</p>
+                
+                <div class="alert alert-warning mt-3">
+                    <i class="fa fa-exclamation-triangle"></i> <strong>Importante:</strong> Al aceptar estos términos, usted reconoce haber leído y comprendido todas las condiciones establecidas.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
