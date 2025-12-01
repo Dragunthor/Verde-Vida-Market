@@ -86,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
         // Vendedores
         Route::get('/vendedores', [AdminController::class, 'vendedores'])->name('vendedores');
         Route::put('/vendedores/{id}/aprobar', [AdminController::class, 'aprobarVendedor'])->name('vendedores.aprobar');
+        Route::put('/vendedores/{id}/desactivar', [AdminController::class, 'desactivarVendedor'])->name('vendedores.desactivar');
         Route::get('/vendedores/{id}', [AdminController::class, 'mostrarVendedor'])->name('vendedores.show');
         Route::get('/vendedores/{id}/editar', [AdminController::class, 'editarVendedor'])->name('vendedores.edit');
         Route::put('/vendedores/{id}', [AdminController::class, 'actualizarVendedor'])->name('vendedores.update');

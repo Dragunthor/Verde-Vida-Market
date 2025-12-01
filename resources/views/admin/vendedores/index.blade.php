@@ -45,6 +45,7 @@
                                 </a>
                                 <form method="POST" action="{{ route('admin.vendedores.aprobar', $vendedor->id) }}" class="d-inline">
                                     @csrf
+                                    @method('PUT')
                                     <button type="submit" class="btn btn-outline-success" title="Aprobar">
                                         <i class="fa fa-check"></i>
                                     </button>
@@ -119,6 +120,14 @@
                                    class="btn btn-outline-info" title="Ver productos">
                                     <i class="fa fa-cubes"></i>
                                 </a>
+                                <form method="POST" action="{{ route('admin.vendedores.desactivar', $vendedor->id) }}" class="d-inline">
+                                    @csrf
+                                    @method('PUT')
+                                    <button type="submit" class="btn btn-outline-danger" title="Desactivar" 
+                                            onclick="return confirm('¿Estás seguro de desactivar este vendedor?')">
+                                        <i class="fa fa-times"></i>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>

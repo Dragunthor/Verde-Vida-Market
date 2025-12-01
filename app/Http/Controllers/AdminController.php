@@ -124,6 +124,17 @@ class AdminController extends Controller
         return redirect('/admin/vendedores')->with('success', 'Vendedor aprobado exitosamente.');
     }
 
+    public function desactivarVendedor($id)
+    {
+        $verificacion = $this->verificarAdmin();
+        if ($verificacion) return $verificacion;
+
+        $vendedorPerfil = VendedorPerfil::findOrFail($id);
+        $vendedorPerfil->update(['activo_vendedor' => false]);
+
+        return redirect('/admin/vendedores')->with('success', 'Vendedor desactivado exitosamente.');
+    }
+
     public function productos()
     {
         $verificacion = $this->verificarAdmin();

@@ -129,13 +129,23 @@
                     @if(!$vendedor->activo_vendedor)
                         <form method="POST" action="{{ route('admin.vendedores.aprobar', $vendedor->id) }}">
                             @csrf
+                            @method('PUT')
                             <button type="submit" class="btn btn-success w-100 mb-2">
                                 <i class="fa fa-check"></i> Aprobar Vendedor
                             </button>
                         </form>
+                    @else
+                        <form method="POST" action="{{ route('admin.vendedores.desactivar', $vendedor->id) }}">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-warning w-100 mb-2" 
+                                    onclick="return confirm('¿Estás seguro de desactivar este vendedor?')">
+                                <i class="fa fa-times"></i> Desactivar Vendedor
+                            </button>
+                        </form>
                     @endif
 
-                    <a href="{{ route('admin.vendedores.edit', $vendedor->id) }}" class="btn btn-warning w-100 mb-2">
+                    <a href="{{ route('admin.vendedores.edit', $vendedor->id) }}" class="btn btn-primary w-100 mb-2">
                         <i class="fa fa-edit"></i> Editar Información
                     </a>
 
